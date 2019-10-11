@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 import pymssql
 
 
-WAIT_SECONDS = 10
+WAIT_SECONDS = 300
 ROOM_NUMBER = 888
 ACTIVE_CARDS = []
 MSSQL_SETTINGS = {
@@ -56,6 +56,7 @@ class Job(threading.Thread):
 if __name__ == "__main__":
     signal.signal(signal.SIGTERM, signal_handler)
     signal.signal(signal.SIGINT, signal_handler)
+    get_active_cards()
     job = Job(interval=timedelta(seconds=WAIT_SECONDS), execute=get_active_cards)
     job.start()
 
