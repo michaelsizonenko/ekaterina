@@ -1,8 +1,11 @@
-import time, threading
-import pymssql
+import threading
+import time
+import signal
 from datetime import datetime, timedelta
+import pymssql
 
-WAIT_SECONDS = 60
+
+WAIT_SECONDS = 10
 ROOM_NUMBER = 888
 ACTIVE_CARDS = []
 MSSQL_SETTINGS = {
@@ -13,6 +16,10 @@ MSSQL_SETTINGS = {
 }
 
 
+class ProgramKilled(Exception):
+    pass
+
+
 def get_active_cards():
     conn = pymssql.connect(**MSSQL_SETTINGS)
     cursor = conn.cursor()
@@ -21,19 +28,42 @@ def get_active_cards():
     cursor.execute(sql)
     result = cursor.fetchall()
     print(result)
-    threading.Timer(WAIT_SECONDS, get_active_cards).start()
+
+
+def signal_handler(signum, frame):
+    raise ProgramKilled
+
+
+class Job(threading.Thread):
+    def __init__(self, interval, execute, *args, **kwargs):
+        threading.Thread.__init__(self)
+        self.daemon = False
+        self.stopped = threading.Event()
+        self.interval = interval
+        self.execute = execute
+        self.args = args
+        self.kwargs = kwargs
+
+    def stop(self):
+        self.stopped.set()
+        self.join()
+
+    def run(self):
+        while not self.stopped.wait(self.interval.total_seconds()):
+            self.execute(*self.args, **self.kwargs)
 
 
 if __name__ == "__main__":
-    try:
-        get_active_cards()
-    except KeyboardInterrupt as exit_:
-        print("Bye!")
-    except Exception as e:
-        print(e)
-    finally:
-        pass
+    signal.signal(signal.SIGTERM, signal_handler)
+    signal.signal(signal.SIGINT, signal_handler)
+    job = Job(interval=timedelta(seconds=WAIT_SECONDS), execute=get_active_cards)
+    job.start()
 
-# while True:
-#       print("main cycle {}".format(time.ctime()))
-#       time.sleep(2)
+    while True:
+        try:
+            time.sleep(1)
+            print("main task")
+        except ProgramKilled:
+            print("Program killed: running cleanup code")
+            job.stop()
+            break
