@@ -8,6 +8,12 @@ import pymssql
 # column names: num,kl,dstart,dend,flag,tip,tekdat,id,rpi
 # rpi - флаг прочтения малинкой. после прочтения помечать rpi(raspberry pi) в положение истина
 room_number = 888
+b'000037623E'
+KEY = 1
+
+
+def handle_table_row(row_):
+    return row_[KEY].replace(" ", "").encode("UTF-8")
 
 
 def get_active_cards():
@@ -16,8 +22,8 @@ def get_active_cards():
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     sql = f"SELECT * FROM table_kluch WHERE dstart <= '{now}' AND dend >= '{now}' AND (tip = 1 OR tip = 0) AND num = {room_number}"
     cursor.execute(sql)
-    result = cursor.fetchall()
-    return result
+    key_list = cursor.fetchall()
+    return [handle_table_row(row) for row in key_list]
 
 
 active_cards = get_active_cards()
