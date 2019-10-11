@@ -3,10 +3,11 @@ import time
 import signal
 from datetime import datetime, timedelta
 import pymssql
-
+import serial
 
 WAIT_SECONDS = 300
 ROOM_NUMBER = 888
+KEY_LENGTH = 14
 ACTIVE_CARDS = []
 MSSQL_SETTINGS = {
     'server': '192.168.9.241',
@@ -28,6 +29,13 @@ def get_active_cards():
     cursor.execute(sql)
     result = cursor.fetchall()
     print(result)
+
+
+def wait_rfid():
+    rfid_port = serial.Serial('/dev/serial0')
+    key_ = rfid_port.read(KEY_LENGTH)[1:11]
+    print(f"key catched {key_}")
+    return key_
 
 
 def signal_handler(signum, frame):
@@ -62,8 +70,8 @@ if __name__ == "__main__":
 
     while True:
         try:
-            time.sleep(1)
             print("main task")
+            wait_rfid()
         except ProgramKilled:
             print("Program killed: running cleanup code")
             job.stop()
