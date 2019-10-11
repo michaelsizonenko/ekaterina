@@ -72,6 +72,7 @@ if __name__ == "__main__":
         try:
             print("main task")
             wait_rfid()
+            time.sleep(5)
         except ProgramKilled:
             print("Program killed: running cleanup code")
             job.stop()
