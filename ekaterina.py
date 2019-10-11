@@ -25,7 +25,14 @@ def get_active_cards():
 
 
 if __name__ == "__main__":
-    get_active_cards()
+    try:
+        get_active_cards()
+    except KeyboardInterrupt as exit_:
+        print("Bye!")
+    except Exception as e:
+        print(e)
+    finally:
+        pass
 
 # while True:
 #       print("main cycle {}".format(time.ctime()))
