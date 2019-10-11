@@ -31,7 +31,7 @@ def get_active_cards():
     conn = pymssql.connect(server='192.168.9.241', user='user', password='123', database='kluch')
     cursor = conn.cursor()
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    sql = f"SELECT * FROM table_kluch WHERE dstart <= '{now}' AND dend >= '{now}' AND (tip = 1 OR tip = 0) AND num = {room_number}"
+    sql = f"SELECT * FROM table_kluch WHERE dstart <= '{now}' AND dend >= '{now}' AND (tip = 1 OR tip = 0) AND num = {ROOM_NUMBER}"
     cursor.execute(sql)
     key_list = cursor.fetchall()
     global active_cards
