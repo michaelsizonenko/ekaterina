@@ -81,6 +81,8 @@ if __name__ == "__main__":
             entered_key = wait_rfid()
             if entered_key in active_cards:
                 print("Correct key! Please enter!")
+            else:
+                print("Unknown key!")
             time.sleep(5)
         except ProgramKilled:
             print("Program killed: running cleanup code")
