@@ -23,12 +23,16 @@ class ProgramKilled(Exception):
     pass
 
 
+def open_door():
+    raise NotImplementedError
+
+
 def handle_table_row(row_):
     return row_[KEY].replace(" ", "").encode("UTF-8")
 
 
 def get_active_cards():
-    conn = pymssql.connect(server='192.168.9.241', user='user', password='123', database='kluch')
+    conn = pymssql.connect(**MSSQL_SETTINGS)
     cursor = conn.cursor()
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     sql = f"SELECT * FROM table_kluch WHERE dstart <= '{now}' AND dend >= '{now}' AND (tip = 1 OR tip = 0) AND num = {ROOM_NUMBER}"
@@ -81,6 +85,7 @@ if __name__ == "__main__":
             entered_key = wait_rfid()
             if entered_key in active_cards:
                 print("Correct key! Please enter!")
+                open_door()
             else:
                 print("Unknown key!")
             time.sleep(5)
