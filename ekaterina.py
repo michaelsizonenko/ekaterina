@@ -99,16 +99,16 @@ def permit_open_door():
         print("The door has been locked by the guest.")
         return
     print(bus.read_byte(relay_addr))
-    set_byte_to_zero(1)
+    set_byte_to_one(1)
     time.sleep(10)
     print(bus.read_byte(relay_addr))
-    set_byte_to_zero(2)
+    set_byte_to_one(2)
     time.sleep(0.1)
     print(bus.read_byte(relay_addr))
-    set_byte_to_one(1)
+    set_byte_to_zero(1)
     time.sleep(1)
     print(bus.read_byte(relay_addr))
-    set_byte_to_one(2)
+    set_byte_to_zero(2)
     print("Nobody entered")
 
 
