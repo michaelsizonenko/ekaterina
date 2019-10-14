@@ -75,8 +75,6 @@ def set_byte_to_one(position):
 def close_door():
     global door_just_closed
     set_byte_to_one(2)
-    time.sleep(0.1)
-    set_byte_to_zero(1)
     time.sleep(1)
     set_byte_to_zero(2)
     door_just_closed = True
@@ -106,6 +104,8 @@ def permit_open_door():
         print("The door has been locked by the guest.")
         return
     set_byte_to_one(1)
+    time.sleep(0.5)
+    set_byte_to_zero(1)
     time.sleep(10)
     if door_just_closed:
         return
