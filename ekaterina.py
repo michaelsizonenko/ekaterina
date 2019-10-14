@@ -106,9 +106,10 @@ def permit_open_door():
     set_byte_to_one(1)
     time.sleep(0.5)
     set_byte_to_zero(1)
-    time.sleep(10)
-    if door_just_closed:
-        return
+    for i in range(10):
+        if door_just_closed:
+            return
+        time.sleep(1)
     close_door()
     print("Nobody entered")
 
