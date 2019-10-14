@@ -83,6 +83,7 @@ def close_door():
     print(bus.read_byte(relay_addr))
     set_byte_to_zero(2)
     door_just_closed = True
+    print("Client has been entered!")
 
 
 def open_door_callback(pin):
