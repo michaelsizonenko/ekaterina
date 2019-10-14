@@ -131,7 +131,7 @@ def get_db_connection():
 def get_active_cards():
     cursor = get_db_connection().cursor()
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    sql = f"SELECT * FROM table_kluch WHERE dstart <= '{now}' AND dend >= '{now}' AND (tip = 1 OR tip = 0) AND num = {ROOM_NUMBER}"
+    sql = "SELECT * FROM table_kluch WHERE dstart <= '{now}' AND dend >= '{now}' AND (tip = 1 OR tip = 0) AND num = {room_number}".format(now=now, room_number=ROOM_NUMBER)
     cursor.execute(sql)
     key_list = cursor.fetchall()
     global active_cards
@@ -141,7 +141,7 @@ def get_active_cards():
 def wait_rfid():
     rfid_port = serial.Serial('/dev/serial0')
     key_ = rfid_port.read(KEY_LENGTH)[1:11]
-    print(f"key catched {key_}")
+    print("key catched {key}".format(key=key_))
     return key_
 
 
