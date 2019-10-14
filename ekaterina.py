@@ -17,6 +17,7 @@ MSSQL_SETTINGS = {
     'password': '123',
     'database': 'kluch'
 }
+door_just_closed = False
 db_connection = None
 bus = smbus.SMBus(1)
 doors_lock_pin = 26
@@ -71,13 +72,8 @@ def set_byte_to_one(position):
     change_byte(position, False)
 
 
-def lock_door():
-    pass
-
-
-def do_open_door(pin):
-    if is_door_locked_from_inside():
-        return
+def close_door():
+    global door_just_closed
     print(bus.read_byte(relay_addr))
     set_byte_to_one(2)
     time.sleep(0.1)
@@ -86,6 +82,13 @@ def do_open_door(pin):
     time.sleep(1)
     print(bus.read_byte(relay_addr))
     set_byte_to_zero(2)
+    door_just_closed = True
+
+
+def open_door_callback(pin):
+    if is_door_locked_from_inside():
+        return
+    close_door()
 
 
 def init_room():
@@ -94,27 +97,22 @@ def init_room():
     GPIO.setup(doors_lock_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
     GPIO.setup(lock_tongue_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
     GPIO.add_event_detect(doors_lock_pin, GPIO.BOTH, lock_door_from_inside)
-    GPIO.add_event_detect(lock_tongue_pin, GPIO.RISING, do_open_door)
+    GPIO.add_event_detect(lock_tongue_pin, GPIO.RISING, open_door_callback)
     global bus
     bus.write_byte_data(relay_addr, 0x09, 0xff)
 
 
 def permit_open_door():
-    global doors_lock_pin
+    global doors_lock_pin, door_just_closed
     if is_door_locked_from_inside():
         print("The door has been locked by the guest.")
         return
     print(bus.read_byte(relay_addr))
     set_byte_to_one(1)
     time.sleep(10)
-    print(bus.read_byte(relay_addr))
-    set_byte_to_one(2)
-    time.sleep(0.1)
-    print(bus.read_byte(relay_addr))
-    set_byte_to_zero(1)
-    time.sleep(1)
-    print(bus.read_byte(relay_addr))
-    set_byte_to_zero(2)
+    if door_just_closed:
+        return
+    close_door()
     print("Nobody entered")
 
 
