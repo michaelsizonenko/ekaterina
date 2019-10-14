@@ -21,8 +21,8 @@ db_connection = None
 bus = smbus.SMBus(1)
 doors_lock_pin = 26
 lock_tongue_pin = 20
-open_lock_cmd = 0x01
-close_lock_cmd = 0x02
+open_lock_cmd = 1
+close_lock_cmd = 2
 relay_addr = 0x38
 
 active_cards = []
@@ -44,21 +44,42 @@ def hex_to_bin(hex_):
     return bin(hex_to_dec(hex_))
 
 
-def lock_door(pin):
+def lock_door_from_inside(pin):
     state = GPIO.input(pin)
     if state:
-        print("door locked!")
+        print("The door is locked from the inside!")
     else:
-        print("door unlocked!")
+        print("The door is unlocked!")
 
 
-def try_open_door(pin):
-    print(bus.read_byte(relay_addr))
-    bus.write_byte_data(relay_addr, 0x09, bus.read_byte(relay_addr) + open_lock_cmd - close_lock_cmd)
-    time.sleep(1)
-    print(bus.read_byte(relay_addr))
-    bus.write_byte_data(relay_addr, 0x09, bus.read_byte(relay_addr) + close_lock_cmd)
-    print("is door locken {}".format(GPIO.input(doors_lock_pin)))
+def is_door_locked_from_inside():
+    return bool(GPIO.input(doors_lock_pin))
+
+
+def change_byte(position, state):
+    l_ = list(str(bin(bus.read_byte(0x38))))
+    l_[-position] = str(int(state))
+    new_relay_state = int("".join(l_), 2)
+    bus.write_byte_data(0x38, 0x09, new_relay_state)
+
+
+def set_byte_to_zero(position):
+    change_byte(position, True)
+
+
+def set_byte_to_one(position):
+    change_byte(position, False)
+
+
+def do_open_door(pin):
+    if is_door_locked_from_inside():
+        return
+
+    # print(bus.read_byte(relay_addr))
+    # bus.write_byte_data(relay_addr, 0x09, bus.read_byte(relay_addr) + open_lock_cmd - close_lock_cmd)
+    # time.sleep(1)
+    # print(bus.read_byte(relay_addr))
+    # bus.write_byte_data(relay_addr, 0x09, bus.read_byte(relay_addr) + close_lock_cmd)
 
 
 def init_room():
@@ -66,28 +87,29 @@ def init_room():
     GPIO.setmode(GPIO.BCM)
     GPIO.setup(doors_lock_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
     GPIO.setup(lock_tongue_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-    GPIO.add_event_detect(doors_lock_pin, GPIO.BOTH, lock_door)
-    GPIO.add_event_detect(lock_tongue_pin, GPIO.RISING, try_open_door)
+    GPIO.add_event_detect(doors_lock_pin, GPIO.BOTH, lock_door_from_inside)
+    GPIO.add_event_detect(lock_tongue_pin, GPIO.RISING, do_open_door)
     global bus
     bus.write_byte_data(relay_addr, 0x09, 0xff)
 
 
-def open_door():
+def permit_open_door():
     global doors_lock_pin
-    is_door_locked = GPIO.input(doors_lock_pin)
-    if is_door_locked:
+    if is_door_locked_from_inside():
         print("The door has been locked by the guest.")
         return
     print(bus.read_byte(relay_addr))
-    bus.write_byte_data(relay_addr, 0x09, bus.read_byte(relay_addr) - open_lock_cmd)
+    set_byte_to_zero(1)
     time.sleep(10)
     print(bus.read_byte(relay_addr))
-    bus.write_byte_data(relay_addr, 0x09, bus.read_byte(relay_addr) + open_lock_cmd - close_lock_cmd)
+    set_byte_to_zero(2)
+    time.sleep(0.1)
+    print(bus.read_byte(relay_addr))
+    set_byte_to_one(1)
     time.sleep(1)
     print(bus.read_byte(relay_addr))
-    bus.write_byte_data(relay_addr, 0x09, bus.read_byte(relay_addr) + close_lock_cmd)
+    set_byte_to_one(2)
     print("Nobody entered")
-    print("is door locken {}".format(GPIO.input(doors_lock_pin)))
 
 
 def handle_table_row(row_):
@@ -155,7 +177,7 @@ if __name__ == "__main__":
             entered_key = wait_rfid()
             if entered_key in active_cards:
                 print("Correct key! Please enter!")
-                open_door()
+                permit_open_door()
             else:
                 print("Unknown key!")
             time.sleep(5)
