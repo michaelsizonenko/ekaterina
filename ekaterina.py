@@ -172,10 +172,13 @@ if __name__ == "__main__":
     job = Job(interval=timedelta(seconds=WAIT_SECONDS), execute=get_active_cards)
     job.start()
 
+    global door_just_closed
+
     init_room()
     while True:
         try:
             print("main task")
+            door_just_closed = False
             entered_key = wait_rfid()
             if entered_key in active_cards:
                 print("Correct key! Please enter!")
