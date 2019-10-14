@@ -32,6 +32,18 @@ class ProgramKilled(Exception):
     pass
 
 
+def bin_to_int(bin_):
+    return int(bin_, 2)
+
+
+def hex_to_dec(hex_):
+    return int(hex_, 16)
+
+
+def hex_to_bin(hex_):
+    return bin(hex_to_dec(hex_))
+
+
 def lock_door(pin):
     state = GPIO.input(pin)
     if state:
@@ -41,8 +53,10 @@ def lock_door(pin):
 
 
 def try_open_door(pin):
+    print(bus.read_byte(relay_addr))
     bus.write_byte_data(relay_addr, 0x09, bus.read_byte(relay_addr) + open_lock_cmd - close_lock_cmd)
     time.sleep(1)
+    print(bus.read_byte(relay_addr))
     bus.write_byte_data(relay_addr, 0x09, bus.read_byte(relay_addr) + close_lock_cmd)
 
 
@@ -63,10 +77,13 @@ def open_door():
     if is_door_locked:
         print("The door has been locked by the guest.")
         return
+    print(bus.read_byte(relay_addr))
     bus.write_byte_data(relay_addr, 0x09, bus.read_byte(relay_addr) - open_lock_cmd)
     time.sleep(10)
+    print(bus.read_byte(relay_addr))
     bus.write_byte_data(relay_addr, 0x09, bus.read_byte(relay_addr) + open_lock_cmd - close_lock_cmd)
     time.sleep(1)
+    print(bus.read_byte(relay_addr))
     bus.write_byte_data(relay_addr, 0x09, bus.read_byte(relay_addr) + close_lock_cmd)
     print("Nobody entered")
 
