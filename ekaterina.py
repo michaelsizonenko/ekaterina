@@ -108,6 +108,7 @@ if __name__ == "__main__":
     job = Job(interval=timedelta(seconds=WAIT_SECONDS), execute=get_active_cards)
     job.start()
 
+    init_room()
     while True:
         try:
             print("main task")
