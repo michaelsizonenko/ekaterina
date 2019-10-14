@@ -172,8 +172,6 @@ if __name__ == "__main__":
     job = Job(interval=timedelta(seconds=WAIT_SECONDS), execute=get_active_cards)
     job.start()
 
-    global door_just_closed
-
     init_room()
     while True:
         try:
