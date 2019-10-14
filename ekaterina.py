@@ -74,13 +74,10 @@ def set_byte_to_one(position):
 
 def close_door():
     global door_just_closed
-    print(bus.read_byte(relay_addr))
     set_byte_to_one(2)
     time.sleep(0.1)
-    print(bus.read_byte(relay_addr))
     set_byte_to_zero(1)
     time.sleep(1)
-    print(bus.read_byte(relay_addr))
     set_byte_to_zero(2)
     door_just_closed = True
     print("Client has been entered!")
@@ -108,7 +105,6 @@ def permit_open_door():
     if is_door_locked_from_inside():
         print("The door has been locked by the guest.")
         return
-    print(bus.read_byte(relay_addr))
     set_byte_to_one(1)
     time.sleep(10)
     if door_just_closed:
