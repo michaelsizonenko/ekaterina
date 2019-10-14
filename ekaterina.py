@@ -20,7 +20,8 @@ MSSQL_SETTINGS = {
 db_connection = None
 bus = smbus.SMBus(1)
 doors_lock_pin = 26
-lock_relay_addr = 0x01
+open_lock_cmd = 0x01
+close_lock_cmd = 0x02
 relay_addr = 0x38
 
 active_cards = []
@@ -53,9 +54,12 @@ def open_door():
     if is_door_locked:
         print("The door has been locked by the guest.")
         return
-    bus.write_byte_data(relay_addr, 0x09, bus.read_byte(relay_addr) - lock_relay_addr)
-    time.sleep(1.5)
-    bus.write_byte_data(relay_addr, 0x09, bus.read_byte(relay_addr) + lock_relay_addr)
+    bus.write_byte_data(relay_addr, 0x09, bus.read_byte(relay_addr) - open_lock_cmd)
+    time.sleep(10)
+    bus.write_byte_data(relay_addr, 0x09, bus.read_byte(relay_addr) + open_lock_cmd - close_lock_cmd)
+    time.sleep(1)
+    bus.write_byte_data(relay_addr, 0x09, bus.read_byte(relay_addr) + close_lock_cmd)
+    print("Nobody entered")
 
 
 def handle_table_row(row_):
