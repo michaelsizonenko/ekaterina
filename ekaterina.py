@@ -24,7 +24,7 @@ doors_lock_pin = 26
 lock_tongue_pin = 20
 open_lock_cmd = 1
 close_lock_cmd = 2
-relay_addr = 0x38
+relay1 = 0x38
 
 active_cards = []
 
@@ -58,10 +58,10 @@ def is_door_locked_from_inside():
 
 
 def change_byte(position, state):
-    l_ = list(str(bin(bus.read_byte(0x38))))
+    l_ = list(str(bin(bus.read_byte(relay1))))
     l_[-position] = str(int(state))
     new_relay_state = int("".join(l_), 2)
-    bus.write_byte_data(0x38, 0x09, new_relay_state)
+    bus.write_byte_data(relay1, 0x09, new_relay_state)
 
 
 def set_byte_to_zero(position):
@@ -75,7 +75,7 @@ def set_byte_to_one(position):
 def close_door():
     global door_just_closed
     set_byte_to_one(2)
-    time.sleep(1)
+    time.sleep(0.5)
     set_byte_to_zero(2)
     door_just_closed = True
     print("Client has been entered!")
@@ -95,7 +95,8 @@ def init_room():
     GPIO.add_event_detect(doors_lock_pin, GPIO.BOTH, lock_door_from_inside)
     GPIO.add_event_detect(lock_tongue_pin, GPIO.RISING, open_door_callback)
     global bus
-    bus.write_byte_data(relay_addr, 0x09, 0xff)
+    # todo: what is the second parameter ?
+    bus.write_byte_data(relay1, 0x09, 0xff)
 
 
 def permit_open_door():
