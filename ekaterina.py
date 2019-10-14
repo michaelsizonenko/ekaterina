@@ -4,6 +4,7 @@ import signal
 from datetime import datetime, timedelta
 import pymssql
 import serial
+import RPi.GPIO as GPIO
 
 WAIT_SECONDS = 300
 ROOM_NUMBER = 888
@@ -15,6 +16,8 @@ MSSQL_SETTINGS = {
     'password': '123',
     'database': 'kluch'
 }
+db_connection = None
+doors_lock_pin = 26
 
 active_cards = []
 
@@ -23,7 +26,27 @@ class ProgramKilled(Exception):
     pass
 
 
+def lock_door(pin):
+    state = GPIO.input(pin)
+    if state:
+        print("door locked!")
+    else:
+        print("door unlocked!")
+
+
+def init_room():
+    global doors_lock_pin
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setup(doors_lock_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+    GPIO.add_event_detect(doors_lock_pin, GPIO.BOTH, lock_door)
+
+
 def open_door():
+    global doors_lock_pin
+    is_door_locked = GPIO.input(doors_lock_pin)
+    if is_door_locked:
+        print("The door has been locked by the guest.")
+        return
     raise NotImplementedError
 
 
@@ -31,9 +54,15 @@ def handle_table_row(row_):
     return row_[KEY].replace(" ", "").encode("UTF-8")
 
 
+def get_db_connection():
+    global db_connection
+    if db_connection is None:
+        db_connection = pymssql.connect(**MSSQL_SETTINGS)
+    return db_connection
+
+
 def get_active_cards():
-    conn = pymssql.connect(**MSSQL_SETTINGS)
-    cursor = conn.cursor()
+    cursor = get_db_connection().cursor()
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     sql = f"SELECT * FROM table_kluch WHERE dstart <= '{now}' AND dend >= '{now}' AND (tip = 1 OR tip = 0) AND num = {ROOM_NUMBER}"
     cursor.execute(sql)
