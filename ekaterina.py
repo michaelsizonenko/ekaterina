@@ -87,6 +87,7 @@ def open_door():
     print(bus.read_byte(relay_addr))
     bus.write_byte_data(relay_addr, 0x09, bus.read_byte(relay_addr) + close_lock_cmd)
     print("Nobody entered")
+    print("is door locken {}".format(GPIO.input(doors_lock_pin)))
 
 
 def handle_table_row(row_):
