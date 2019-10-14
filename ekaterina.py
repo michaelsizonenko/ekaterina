@@ -1,6 +1,7 @@
 import threading
 import time
 import signal
+import smbus
 from datetime import datetime, timedelta
 import pymssql
 import serial
@@ -17,7 +18,10 @@ MSSQL_SETTINGS = {
     'database': 'kluch'
 }
 db_connection = None
+bus = smbus.SMBus(1)
 doors_lock_pin = 26
+lock_relay_addr = 0x01
+relay_addr = 0x38
 
 active_cards = []
 
@@ -39,6 +43,8 @@ def init_room():
     GPIO.setmode(GPIO.BCM)
     GPIO.setup(doors_lock_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
     GPIO.add_event_detect(doors_lock_pin, GPIO.BOTH, lock_door)
+    global bus
+    bus.write_byte_data(relay_addr, 0x09, 0xff)
 
 
 def open_door():
@@ -47,7 +53,8 @@ def open_door():
     if is_door_locked:
         print("The door has been locked by the guest.")
         return
-    raise NotImplementedError
+    current_relay_state = bus.read_byte(relay_addr)
+    bus.write_byte_data(relay_addr, 0x09, current_relay_state - lock_relay_addr)
 
 
 def handle_table_row(row_):
