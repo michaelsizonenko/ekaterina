@@ -53,8 +53,9 @@ def open_door():
     if is_door_locked:
         print("The door has been locked by the guest.")
         return
-    current_relay_state = bus.read_byte(relay_addr)
-    bus.write_byte_data(relay_addr, 0x09, current_relay_state - lock_relay_addr)
+    bus.write_byte_data(relay_addr, 0x09, bus.read_byte(relay_addr) - lock_relay_addr)
+    time.sleep(1.5)
+    bus.write_byte_data(relay_addr, 0x09, bus.read_byte(relay_addr) + lock_relay_addr)
 
 
 def handle_table_row(row_):
