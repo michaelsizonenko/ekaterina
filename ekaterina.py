@@ -71,15 +71,21 @@ def set_byte_to_one(position):
     change_byte(position, False)
 
 
+def lock_door():
+    pass
+
+
 def do_open_door(pin):
     if is_door_locked_from_inside():
         return
-
-    # print(bus.read_byte(relay_addr))
-    # bus.write_byte_data(relay_addr, 0x09, bus.read_byte(relay_addr) + open_lock_cmd - close_lock_cmd)
-    # time.sleep(1)
-    # print(bus.read_byte(relay_addr))
-    # bus.write_byte_data(relay_addr, 0x09, bus.read_byte(relay_addr) + close_lock_cmd)
+    print(bus.read_byte(relay_addr))
+    set_byte_to_one(2)
+    time.sleep(0.1)
+    print(bus.read_byte(relay_addr))
+    set_byte_to_zero(1)
+    time.sleep(1)
+    print(bus.read_byte(relay_addr))
+    set_byte_to_zero(2)
 
 
 def init_room():
