@@ -182,7 +182,6 @@ if __name__ == "__main__":
                 permit_open_door()
             else:
                 print("Unknown key!")
-            time.sleep(5)
         except ProgramKilled:
             print("Program killed: running cleanup code")
             job.stop()
