@@ -20,6 +20,7 @@ MSSQL_SETTINGS = {
 db_connection = None
 bus = smbus.SMBus(1)
 doors_lock_pin = 26
+lock_tongue_pin = 20
 open_lock_cmd = 0x01
 close_lock_cmd = 0x02
 relay_addr = 0x38
@@ -39,11 +40,17 @@ def lock_door(pin):
         print("door unlocked!")
 
 
+def try_open_door(pin):
+    raise NotImplementedError
+
+
 def init_room():
     global doors_lock_pin
     GPIO.setmode(GPIO.BCM)
     GPIO.setup(doors_lock_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+    GPIO.setup(lock_tongue_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
     GPIO.add_event_detect(doors_lock_pin, GPIO.BOTH, lock_door)
+    GPIO.add_event_detect(lock_tongue_pin, GPIO.RISING, try_open_door)
     global bus
     bus.write_byte_data(relay_addr, 0x09, 0xff)
 
