@@ -41,7 +41,9 @@ def lock_door(pin):
 
 
 def try_open_door(pin):
-    raise NotImplementedError
+    bus.write_byte_data(relay_addr, 0x09, bus.read_byte(relay_addr) + open_lock_cmd - close_lock_cmd)
+    time.sleep(1)
+    bus.write_byte_data(relay_addr, 0x09, bus.read_byte(relay_addr) + close_lock_cmd)
 
 
 def init_room():
