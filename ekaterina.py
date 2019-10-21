@@ -47,6 +47,7 @@ def hex_to_bin(hex_):
 
 
 def lock_door_from_inside(pin):
+    print(f"{pin} callback")
     state = GPIO.input(pin)
     if state:
         print("The door is unlocked!")
@@ -87,12 +88,14 @@ def close_door():
 
 
 def open_door_callback(pin):
+    print(f"{pin} callback")
     if is_door_locked_from_inside():
         return
     close_door()
 
 
 def init_room():
+    print("Init room")
     global doors_lock_pin
     GPIO.setmode(GPIO.BCM)
     GPIO.setup(doors_lock_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
@@ -102,6 +105,7 @@ def init_room():
     global bus
     # todo: what is the second parameter ?
     bus.write_byte_data(relay1, 0x09, 0xff)
+    print("The room has been initiated")
 
 
 def permit_open_door():
@@ -184,7 +188,7 @@ if __name__ == "__main__":
     init_room()
     while True:
         try:
-            print("main task")
+            print("Waiting for the key")
             door_just_closed = False
             entered_key = wait_rfid()
             if entered_key in active_cards:
