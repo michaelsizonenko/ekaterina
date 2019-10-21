@@ -18,6 +18,7 @@ MSSQL_SETTINGS = {
     'database': 'kluch'
 }
 door_just_closed = False
+can_open_the_door = False
 db_connection = None
 bus = smbus.SMBus(1)
 doors_lock_pin = 26
@@ -48,13 +49,13 @@ def hex_to_bin(hex_):
 def lock_door_from_inside(pin):
     state = GPIO.input(pin)
     if state:
-        print("The door is locked from the inside!")
-    else:
         print("The door is unlocked!")
+    else:
+        print("The door is locked from the inside!")
 
 
 def is_door_locked_from_inside():
-    return bool(GPIO.input(doors_lock_pin))
+    return not bool(GPIO.input(doors_lock_pin))
 
 
 def change_byte(position, state):
@@ -73,10 +74,14 @@ def set_byte_to_one(position):
 
 
 def close_door():
-    global door_just_closed
+    global door_just_closed, can_open_the_door
+    if not can_open_the_door:
+        print("Door is closed. Permission denied!")
+        return
     set_byte_to_one(2)
     time.sleep(0.5)
     set_byte_to_zero(2)
+    can_open_the_door = False
     door_just_closed = True
     print("Client has been entered!")
 
@@ -90,23 +95,26 @@ def open_door_callback(pin):
 def init_room():
     global doors_lock_pin
     GPIO.setmode(GPIO.BCM)
-    GPIO.setup(doors_lock_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-    GPIO.setup(lock_tongue_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-    GPIO.add_event_detect(doors_lock_pin, GPIO.BOTH, lock_door_from_inside)
-    GPIO.add_event_detect(lock_tongue_pin, GPIO.RISING, open_door_callback)
+    GPIO.setup(doors_lock_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+    GPIO.setup(lock_tongue_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+    GPIO.add_event_detect(doors_lock_pin, GPIO.FALLING, lock_door_from_inside)
+    GPIO.add_event_detect(lock_tongue_pin, GPIO.FALLING, open_door_callback)
     global bus
     # todo: what is the second parameter ?
     bus.write_byte_data(relay1, 0x09, 0xff)
 
 
 def permit_open_door():
-    global doors_lock_pin, door_just_closed
+    global doors_lock_pin, door_just_closed, can_open_the_door
     if is_door_locked_from_inside():
         print("The door has been locked by the guest.")
+        # door_just_closed = True
         return
     set_byte_to_one(1)
     time.sleep(0.5)
     set_byte_to_zero(1)
+    can_open_the_door = True
+    
     for i in range(10):
         if door_just_closed:
             return
