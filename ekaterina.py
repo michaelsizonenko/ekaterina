@@ -47,7 +47,7 @@ def hex_to_bin(hex_):
 
 
 def lock_door_from_inside(pin):
-    print(f"{pin} callback")
+    print("{pin} callback".format(pin=pin))
     state = GPIO.input(pin)
     if state:
         print("The door is unlocked!")
@@ -88,7 +88,7 @@ def close_door():
 
 
 def open_door_callback(pin):
-    print(f"{pin} callback")
+    print("{pin} callback".format(pin=pin))
     if is_door_locked_from_inside():
         return
     close_door()
@@ -112,7 +112,6 @@ def permit_open_door():
     global doors_lock_pin, door_just_closed, can_open_the_door
     if is_door_locked_from_inside():
         print("The door has been locked by the guest.")
-        # door_just_closed = True
         return
     set_byte_to_one(1)
     time.sleep(0.5)
