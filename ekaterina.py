@@ -98,9 +98,9 @@ def permit_open_door():
     if is_door_locked_from_inside():
         print("The door has been locked by the guest.")
         return
-    relay1_controller.set_bit(0)
-    time.sleep(0.5)
     relay1_controller.clear_bit(0)
+    time.sleep(0.5)
+    relay1_controller.set_bit(0)
     can_open_the_door = True
     
     for i in range(10):
