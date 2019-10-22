@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 import pymssql
 import serial
 import RPi.GPIO as GPIO
+from relaycontroller import RelayController
 
 WAIT_SECONDS = 300
 ROOM_NUMBER = 888
@@ -25,7 +26,7 @@ doors_lock_pin = 26
 lock_tongue_pin = 20
 open_lock_cmd = 1
 close_lock_cmd = 2
-relay1 = 0x38
+relay1_controller = RelayController(0x38)
 
 active_cards = []
 
@@ -59,29 +60,14 @@ def is_door_locked_from_inside():
     return not bool(GPIO.input(doors_lock_pin))
 
 
-def change_byte(position, state):
-    l_ = list(str(bin(bus.read_byte(relay1))))
-    l_[-position] = str(int(state))
-    new_relay_state = int("".join(l_), 2)
-    bus.write_byte_data(relay1, 0x09, new_relay_state)
-
-
-def set_byte_to_zero(position):
-    change_byte(position, True)
-
-
-def set_byte_to_one(position):
-    change_byte(position, False)
-
-
 def close_door():
     global door_just_closed, can_open_the_door
     if not can_open_the_door:
         print("Door is closed. Permission denied!")
         return
-    set_byte_to_one(2)
+    relay1_controller.clear_bit(1)
     time.sleep(0.5)
-    set_byte_to_zero(2)
+    relay1_controller.set_bit(1)
     can_open_the_door = False
     door_just_closed = True
     print("Client has been entered!")
@@ -113,9 +99,9 @@ def permit_open_door():
     if is_door_locked_from_inside():
         print("The door has been locked by the guest.")
         return
-    set_byte_to_one(1)
+    relay1_controller.set_bit(0)
     time.sleep(0.5)
-    set_byte_to_zero(1)
+    relay1_controller.clear_bit(0)
     can_open_the_door = True
     
     for i in range(10):
