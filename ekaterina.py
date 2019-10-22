@@ -90,7 +90,6 @@ def init_room():
     GPIO.add_event_detect(lock_tongue_pin, GPIO.FALLING, open_door_callback)
     global bus
     # todo: what is the second parameter ?
-    bus.write_byte_data(relay1, 0x09, 0xff)
     print("The room has been initiated")
 
 

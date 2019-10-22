@@ -9,7 +9,7 @@ class RelayController:
     def __init__(self, address):
         self.__address = address
         self.__bus = smbus.SMBus(1)
-        self.__bus.write_byte_data(self.__address, 0x09, 255)
+        self.__bus.write_byte_data(self.__address, 0x09, 0xff)
 
     def clear_bit(self, bit):
         value = self.__bus.read_byte(self.__address)
