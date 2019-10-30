@@ -30,33 +30,43 @@ relay1_controller = RelayController(0x38)
 
 active_cards = []
 
+apin26 = 1
+apin20 = 1
+
 
 class ProgramKilled(Exception):
     pass
 
 
-def bin_to_int(bin_):
-    return int(bin_, 2)
-
-
-def hex_to_dec(hex_):
-    return int(hex_, 16)
-
-
-def hex_to_bin(hex_):
-    return bin(hex_to_dec(hex_))
-
-
+# pin#26 callback
 def lock_door_from_inside(pin):
+    global apin26
     print("{pin} callback".format(pin=pin))
-    state = GPIO.input(pin)
-    if state:
-        print("The door is unlocked!")
-    else:
+    pin26_state = GPIO.input(pin)
+    if apin26 and not pin26_state:
+        time.sleep(0.01)
+        pin26_state = GPIO.input(pin)
         print("The door is locked from the inside!")
+        time.sleep(0.1)
+    apin26 = pin26_state
+
+
+# pin#20 callback
+def open_door_callback(pin):
+    global apin20
+    print("{pin} callback".format(pin=pin))
+    pin20_state = GPIO.input(pin)
+    if apin20 and not pin20_state:
+        time.sleep(0.01)
+        pin20_state = GPIO.input(pin)
+        if is_door_locked_from_inside():
+            return
+        close_door()
+    apin20 = pin20_state
 
 
 def is_door_locked_from_inside():
+    time.sleep(0.1)
     return not bool(GPIO.input(doors_lock_pin))
 
 
@@ -73,16 +83,9 @@ def close_door():
     print("Client has been entered!")
 
 
-def open_door_callback(pin):
-    print("{pin} callback".format(pin=pin))
-    if is_door_locked_from_inside():
-        return
-    close_door()
-
-
 def init_room():
     print("Init room")
-    global doors_lock_pin
+    global doors_lock_pin, lock_tongue_pin
     GPIO.setmode(GPIO.BCM)
     GPIO.setup(doors_lock_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
     GPIO.setup(lock_tongue_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
