@@ -106,7 +106,7 @@ def permit_open_door():
     relay1_controller.set_bit(0)
     can_open_the_door = True
     
-    for i in range(10):
+    for i in range(5):
         if door_just_closed:
             return
         time.sleep(1)
