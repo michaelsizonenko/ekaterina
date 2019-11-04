@@ -13,11 +13,11 @@ class PinController:
         if isinstance(pin, str) and not pin.isdigit():
             raise Exception("Integer expected")
         pin = int(pin)
-        if pin < 0 or 27 > pin:
-            raise Exception("BCM mode provide numbers [0; 27]")
+        if pin < 0 or 27 <pin:
+            raise Exception("BCM mode provide numbers [0; 27]. {} given.".format(pin))
         return pin
 
-    def __init__(self, pin, callback, up_down=GPIO.PUD_UP):
+    def __init__(self, pin, callback=None, up_down=GPIO.PUD_UP):
         self.pin = self.validate_pin(pin)
-        assert (up_down in GPIO.PUD_UP, GPIO.PUD_DOWN), "This is weird! Pull-up-down parameter can be either UP or DOWN"
+        assert (up_down not in (GPIO.PUD_UP, GPIO.PUD_DOWN)), "This is weird! Pull-up-down parameter can be either UP or DOWN"
 
