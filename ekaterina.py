@@ -115,7 +115,7 @@ def handle_table_row(row_):
 def get_db_connection():
     global db_connection
     if db_connection is None:
-        db_connection = pymssql.connect(**config.db_config)
+        db_connection = pymssql.connect(**config.db_config.__dict__)
     return db_connection
 
 
