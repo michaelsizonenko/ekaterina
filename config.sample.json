@@ -1,0 +1,14 @@
+{
+  "room_number": 999,
+
+  "db_config": {
+    "server": "",
+    "user": "",
+    "password": "",
+    "database": ""
+  },
+
+  "lock_timeout": 5,
+  "new_key_check_interval": 300,
+  "rfig_key_table_index": 1
+}

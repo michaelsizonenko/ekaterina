@@ -35,7 +35,6 @@ bus.write_byte_data(0x39, 0xff, i2cplate39)
 
 cmd38_7 = 1  # k7  /Бра L в спальной 1
 cmd38_8 = 1  # k8  /Бра R в спальной 1
-
 cmd39_1 = 1  # k9  /Основной свет в спальной 1
 
 pin17 = 17
@@ -46,15 +45,10 @@ apin17 = 1
 apin18 = 1
 apin27 = 1
 
-cmd38_7 = 1  # k7  /Бра L в спальной 1
-cmd38_8 = 1  # k8  /Бра R в спальной 1
-cmd39_1 = 1  # k9  /Основной свет в спальной 1
-
 
 def callback_func(pin):
     # result = sock.recv(1024)
     # print(result.hex())
-
     global apin17
     global apin18
     global apin27

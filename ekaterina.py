@@ -7,17 +7,9 @@ import pymssql
 import serial
 import RPi.GPIO as GPIO
 from relaycontroller import RelayController
+from config import Config
 
-WAIT_SECONDS = 300
-ROOM_NUMBER = 888
-KEY = 1
-KEY_LENGTH = 14
-MSSQL_SETTINGS = {
-    'server': '192.168.9.241',
-    'user': 'user',
-    'password': '123',
-    'database': 'kluch'
-}
+
 door_just_closed = False
 can_open_the_door = False
 db_connection = None
@@ -32,6 +24,8 @@ active_cards = []
 
 apin26 = 1
 apin20 = 1
+
+config = Config()
 
 
 class ProgramKilled(Exception):
@@ -106,7 +100,7 @@ def permit_open_door():
     relay1_controller.set_bit(0)
     can_open_the_door = True
     
-    for i in range(5):
+    for i in range(config.lock_timeout):
         if door_just_closed:
             return
         time.sleep(1)
@@ -115,20 +109,20 @@ def permit_open_door():
 
 
 def handle_table_row(row_):
-    return row_[KEY].replace(" ", "").encode("UTF-8")
+    return row_[config.rfig_key_table_index].replace(" ", "").encode("UTF-8")
 
 
 def get_db_connection():
     global db_connection
     if db_connection is None:
-        db_connection = pymssql.connect(**MSSQL_SETTINGS)
+        db_connection = pymssql.connect(**config.db_config)
     return db_connection
 
 
 def get_active_cards():
     cursor = get_db_connection().cursor()
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    sql = "SELECT * FROM table_kluch WHERE dstart <= '{now}' AND dend >= '{now}' AND (tip = 1 OR tip = 0) AND num = {room_number}".format(now=now, room_number=ROOM_NUMBER)
+    sql = "SELECT * FROM table_kluch WHERE dstart <= '{now}' AND dend >= '{now}' AND (tip = 1 OR tip = 0) AND num = {room_number}".format(now=now, room_number=config.room_number)
     cursor.execute(sql)
     key_list = cursor.fetchall()
     global active_cards
@@ -137,7 +131,7 @@ def get_active_cards():
 
 def wait_rfid():
     rfid_port = serial.Serial('/dev/serial0')
-    key_ = rfid_port.read(KEY_LENGTH)[1:11]
+    key_ = rfid_port.read(config.rfid_key_length)[1:11]
     print("key catched {key}".format(key=key_))
     return key_
 
@@ -169,7 +163,7 @@ if __name__ == "__main__":
     signal.signal(signal.SIGTERM, signal_handler)
     signal.signal(signal.SIGINT, signal_handler)
     get_active_cards()
-    job = Job(interval=timedelta(seconds=WAIT_SECONDS), execute=get_active_cards)
+    job = Job(interval=timedelta(seconds=config.new_key_check_interval), execute=get_active_cards)
     job.start()
 
     init_room()
