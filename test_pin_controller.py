@@ -13,6 +13,8 @@ class TestPinController(unittest.TestCase):
             ctrl = PinController(12.234)
         with self.assertRaises(Exception):
             ctrl = PinController(-12)
+        with self.assertRaises(Exception):
+            ctrl = PinController(40)
         ctrl = PinController(20)
         with self.assertRaises(AssertionError):
             PinController(20, None, up_down="string")
