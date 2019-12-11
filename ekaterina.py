@@ -155,6 +155,12 @@ def wait_rfid():
     print("key catched {key} {datetime}".format(key=key_, datetime=datetime.utcnow()))
     return key_
 
+def wait_rfid1():
+    rfid_port = serial.Serial('/dev/ttyUSB0')
+    key_ = rfid_port.read(config.rfid_key_length)[1:11]
+    print("key catched {key} {datetime}".format(key=key_, datetime=datetime.utcnow()))
+    return key_
+
 
 def signal_handler(signum, frame):
     raise ProgramKilled
