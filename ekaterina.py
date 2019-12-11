@@ -22,8 +22,8 @@ relay1_controller = RelayController(0x38)
 
 active_cards = []
 
-apin20 = 1
-apin26 = 1
+#apin20 = 1
+#apin26 = 1
 pin20_state = 1
 pin26_state = 1
 
@@ -41,13 +41,13 @@ class ProgramKilled(Exception):
 # pin#26 callback
 def lock_door_from_inside(pin):  # проверка сработки "язычка" на открытие
     time.sleep(0.01)
-    global apin26
+#    global apin26
     global k
     global pin26_state
     pin26_state = GPIO.input(pin)
-    if apin26 and not pin26_state:
+    if not pin26_state:
         time.sleep(0.01)
-        if apin26 and not pin26_state:
+        if not pin26_state:
             #            pin26_state = GPIO.input(pin)
             #            apin26 = pin26_state
             print("lock_door_from_inside")
@@ -58,13 +58,13 @@ def lock_door_from_inside(pin):  # проверка сработки "язычк
 # pin#20 callback
 def open_door_callback(pin):  # проверка сработки внут защелки (ригеля) на закрытие
     time.sleep(0.01)
-    global apin20
+#    global apin20
     global o
     global pin20_state
     pin20_state = GPIO.input(pin)
-    if apin20 and not pin20_state:
+    if not pin20_state:
         time.sleep(0.01)
-        if apin20 and not pin20_state:
+        if not pin20_state:
             #            pin20_state = GPIO.input(pin)
             #            apin20 = pin20_state
             print("{pin} callback".format(pin=pin))
@@ -96,16 +96,14 @@ def close_door():
 def init_room():
     print("Init room")
     global doors_lock_pin, lock_tongue_pin
-    #    GPIO.setmode(GPIO.BCM)
+    GPIO.setmode(GPIO.BCM)
     GPIO.setup(doors_lock_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
     GPIO.setup(lock_tongue_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-    GPIO.add_event_detect(doors_lock_pin, GPIO.FALLING,
-                          lock_door_from_inside)  # добавляем  детектор сработки "язычка" на открытие с вызовом ф-ии "проверка сработки "язычка" на открытие"
-    GPIO.add_event_detect(lock_tongue_pin, GPIO.FALLING,
-                          open_door_callback)  # добавляем детектор сработки внут защелки (ригеля) на закрытие с вызовом ф-ии "проверка сработки внут защелки (ригеля) на закрытие"
+    GPIO.add_event_detect(doors_lock_pin, GPIO.FALLING, lock_door_from_inside)  # добавляем  детектор сработки "язычка" на открытие с вызовом ф-ии "проверка сработки "язычка" на открытие"
+    GPIO.add_event_detect(lock_tongue_pin, GPIO.FALLING, open_door_callback)  # добавляем детектор сработки внут защелки (ригеля) на закрытие с вызовом ф-ии "проверка сработки внут защелки (ригеля) на закрытие"
     global bus
     # todo: what is the second parameter ?
-    lock_door_from_inside
+#    lock_door_from_inside()
     print("The room has been initiated")
 
 
