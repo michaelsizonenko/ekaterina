@@ -132,7 +132,7 @@ def get_active_cards():
 def wait_rfid():
     rfid_port = serial.Serial('/dev/serial0')
     key_ = rfid_port.read(config.rfid_key_length)[1:11]
-    print("key catched {key}".format(key=key_))
+    print("key catched {key} {datetime}".format(key=key_, datetime=datetime.utcnow()))
     return key_
 
 
