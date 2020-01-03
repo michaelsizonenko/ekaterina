@@ -19,6 +19,36 @@ lock_tongue_pin = 20
 open_lock_cmd = 1
 close_lock_cmd = 2
 relay1_controller = RelayController(0x38)
+relay2_controller = RelayController(0x39)
+
+
+relay2_controller.clear_bit(4)
+relay2_controller.clear_bit(5)
+relay2_controller.clear_bit(6)
+
+
+
+
+
+#for i in range (500000):
+#    relay2_controller.clear_bit(6)
+#    time.sleep(0.1)
+#    relay2_controller.clear_bit(4)
+#    time.sleep(0.1)
+#    relay2_controller.clear_bit(5)
+#    time.sleep(0.3)
+#    
+#    relay2_controller.set_bit(6)
+#    time.sleep(0.1)
+#    relay2_controller.set_bit(4)
+#    time.sleep(0.1)
+#    relay2_controller.set_bit(5)
+#    time.sleep(0.3)
+
+data = bus.read_byte(0x38)
+data1 = bus.read_byte(0x39)
+
+print (bin (data), bin (data1))
 
 active_cards = []
 
@@ -46,14 +76,18 @@ def lock_door_from_inside(pin):   # проверка сработки внут �
     if not pin26_state:
         time.sleep(0.01)
         if not pin26_state:
-           
+            
+            relay2_controller.set_bit(6)
+            
             print("lock_door_from_inside")
             print("k=", k)
             k = k + 1
+            return
+    relay2_controller.clear_bit(6)
 
 
 # pin#20 callback
-def open_door_callback(pin): # проверка сработки "язычка" на открытие
+def open_door_callback(pin): # проверка сработки "язычка" на открытие с последующим вызовом функции "закрытия замка"
     time.sleep(0.01)
     global o
     global pin20_state
@@ -66,15 +100,20 @@ def open_door_callback(pin): # проверка сработки "язычка" 
             o = o + 1
             #            if is_door_locked_from_inside():                                     # ???????
             #                return
+            time.sleep(1)
             close_door()
 
 
 def is_door_locked_from_inside():
     time.sleep(0.1)
+    
+    
+    
     return not bool(GPIO.input(doors_lock_pin))
 
 
-def close_door():
+
+def close_door():        # закрытие замка, с предварительной проверкой
     global door_just_closed, can_open_the_door
     if not can_open_the_door:
         print("Door is closed. Permission denied!")
@@ -84,6 +123,7 @@ def close_door():
     relay1_controller.set_bit(1)
     can_open_the_door = False
     door_just_closed = True
+#    lamp_close()
     print("Client has been entered!")
 
 
@@ -93,8 +133,8 @@ def init_room():
     GPIO.setmode(GPIO.BCM)
     GPIO.setup(doors_lock_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
     GPIO.setup(lock_tongue_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-    GPIO.add_event_detect(doors_lock_pin, GPIO.FALLING, lock_door_from_inside)  # добавляем детектор сработки внут защелки (ригеля) на закрытие с вызовом ф-ии "проверка сработки внут защелки (ригеля) на закрытие"
-    GPIO.add_event_detect(lock_tongue_pin, GPIO.FALLING, open_door_callback)  # добавляем  детектор сработки "язычка" на открытие с вызовом ф-ии "проверка сработки "язычка" на открытие"
+    GPIO.add_event_detect(doors_lock_pin, GPIO.BOTH, lock_door_from_inside)  # добавляем детектор сработки внут защелки (ригеля) на закрытие с вызовом ф-ии "проверка сработки внут защелки (ригеля) на закрытие"
+    GPIO.add_event_detect(lock_tongue_pin, GPIO.BOTH, open_door_callback)  # добавляем  детектор сработки "язычка" на открытие с вызовом ф-ии "проверка сработки "язычка" на открытие"
     global bus
     # todo: what is the second parameter ?
 #    lock_door_from_inside()
@@ -104,21 +144,37 @@ def init_room():
 def permit_open_door():
     global doors_lock_pin, door_just_closed, can_open_the_door
     if is_door_locked_from_inside():
+        
+        for i in range (5):
+            relay2_controller.set_bit(6)
+            relay2_controller.clear_bit(4)
+            time.sleep(0.1)
+            relay2_controller.set_bit(4)
+            relay2_controller.clear_bit(6)
+            time.sleep(0.1)
+        relay2_controller.clear_bit(4)
         print("The door has been locked by the guest.")
         return
     relay1_controller.clear_bit(0)
     time.sleep(0.2)
     relay1_controller.set_bit(0)
     can_open_the_door = True
-    #    GPIO.add_event_callback(lock_tongue_pin, GPIO.FALLING, open_door_callback)
+#    lamp_open()
+       
 
-    for i in range(5):
+    for i in range(50):
 
         if door_just_closed:
             return
-        time.sleep(1)
+#        time.sleep(0.1)
+        
+        relay2_controller.set_bit(4)
+        time.sleep(0.1)
+        relay2_controller.clear_bit(4)
+        time.sleep(0.05)
+        
     close_door()
-    #    GPIO.remove_event_detect(lock_tongue_pin)
+   
     print("Nobody entered")
 
 
@@ -141,6 +197,23 @@ def get_active_cards():
     key_list = cursor.fetchall()
     global active_cards
     active_cards = [handle_table_row(row) for row in key_list]
+    
+#def lamp_open():
+#    for i in range (5):
+#        relay2_controller.set_bit(4)
+#        time.sleep(0.1)
+#        relay2_controller.clear_bit(4)
+#        time.sleep(0.05)
+#    
+#def lamp_close():
+#    for i in range (5):
+#        relay2_controller.set_bit(5)
+#        time.sleep(0.1)
+#        relay2_controller.clear_bit(5)
+#        time.sleep(0.05)
+    
+    
+    
 
 
 def wait_rfid():
@@ -187,6 +260,10 @@ if __name__ == "__main__":
     job.start()
 
     init_room()
+    
+    
+    
+    
     while True:
         try:
             print("Waiting for the key")
@@ -195,9 +272,20 @@ if __name__ == "__main__":
             if entered_key in active_cards:
                 print("Correct key! Please enter!")
                 permit_open_door()
+                
             else:
                 print("Unknown key!")
+                for i in range (5):
+                    relay2_controller.set_bit(6)
+                    time.sleep(0.1)
+                    relay2_controller.clear_bit(6)
+                    time.sleep(0.05)
         except ProgramKilled:
             print("Program killed: running cleanup code")
             job.stop()
             break
+
+
+
+
+      
