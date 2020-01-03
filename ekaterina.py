@@ -7,7 +7,7 @@ import pymssql
 import serial
 import RPi.GPIO as GPIO
 from relaycontroller import RelayController
-from config import Config
+from config import Config, logger
 
 door_just_closed = False
 can_open_the_door = False
@@ -26,7 +26,7 @@ relay2_controller.clear_bit(4)
 data = bus.read_byte(0x38)
 data1 = bus.read_byte(0x39)
 
-print(bin(data), bin(data1))
+logger.info(bin(data), bin(data1))
 
 active_cards = []
 
@@ -53,7 +53,7 @@ def lock_door_from_inside(pin):  # проверка сработки внут з
         if not pin26_state:
             relay2_controller.set_bit(2)
 
-            print("Callback for {pin} pin. The door has been locked from inside. Counter : {counter}"
+            logger.info("Callback for {pin} pin. The door has been locked from inside. Counter : {counter}"
                   .format(pin=pin, counter=close_door_from_inside_counter))
             close_door_from_inside_counter = close_door_from_inside_counter + 1
             return
@@ -68,7 +68,7 @@ def open_door_callback(pin):  # проверка сработки "язычка"
     if not pin20_state:
         time.sleep(0.01)
         if not pin20_state:
-            print("Callback for {pin} pin. The door has been openned. Counter : {counter}"
+            logger.info("Callback for {pin} pin. The door has been openned. Counter : {counter}"
                   .format(pin=pin, counter=open_door_counter))
             open_door_counter = open_door_counter + 1
             #            if is_door_locked_from_inside():                                     # ???????
@@ -85,7 +85,7 @@ def is_door_locked_from_inside():
 def close_door():  # закрытие замка, с предварительной проверкой
     global door_just_closed, can_open_the_door
     if not can_open_the_door:
-        print("Door is closed. Permission denied!")
+        logger.info("Door is closed. Permission denied!")
         return
     relay1_controller.clear_bit(1)
     time.sleep(0.2)
@@ -93,11 +93,11 @@ def close_door():  # закрытие замка, с предварительн�
     can_open_the_door = False
     door_just_closed = True
     #    lamp_close()
-    print("Client has been entered!")
+    logger.info("Client has been entered!")
 
 
 def init_room():
-    print("Init room")
+    logger.info("Init room")
     global doors_lock_pin, lock_tongue_pin
     GPIO.setmode(GPIO.BCM)
     GPIO.setup(doors_lock_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
@@ -112,7 +112,7 @@ def init_room():
     global bus
     # todo: what is the second parameter ?
     #    lock_door_from_inside()
-    print("The room has been initiated")
+    logger.info("The room has been initiated")
 
 
 def permit_open_door():
@@ -127,7 +127,7 @@ def permit_open_door():
             relay2_controller.clear_bit(4)
             time.sleep(0.1)
         relay2_controller.clear_bit(0)
-        print("The door has been locked by the guest.")
+        logger.info("The door has been locked by the guest.")
         return
     relay1_controller.clear_bit(0)
     time.sleep(0.2)
@@ -148,7 +148,7 @@ def permit_open_door():
 
     close_door()
 
-    print("Nobody entered")
+    logger.info("Nobody entered")
 
 
 def handle_table_row(row_):
@@ -191,14 +191,14 @@ def get_active_cards():
 def wait_rfid():
     rfid_port = serial.Serial('/dev/serial0')
     key_ = rfid_port.read(config.rfid_key_length)[1:11]
-    print("key catched {key} {datetime}".format(key=key_, datetime=datetime.utcnow()))
+    logger.info("key catched {key} {datetime}".format(key=key_, datetime=datetime.utcnow()))
     return key_
 
 
 def wait_rfid1():
     rfid_port = serial.Serial('/dev/ttyUSB0')
     key_ = rfid_port.read(config.rfid_key_length)[1:11]
-    print("key catched {key} {datetime}".format(key=key_, datetime=datetime.utcnow()))
+    logger.info("key catched {key} {datetime}".format(key=key_, datetime=datetime.utcnow()))
     return key_
 
 
@@ -236,21 +236,21 @@ if __name__ == "__main__":
 
     while True:
         try:
-            print("Waiting for the key")
+            logger.info("Waiting for the key")
             door_just_closed = False
             entered_key = wait_rfid()
             if entered_key in active_cards:
-                print("Correct key! Please enter!")
+                logger.info("Correct key! Please enter!")
                 permit_open_door()
 
             else:
-                print("Unknown key!")
+                logger.info("Unknown key!")
                 for i in range(5):
                     relay2_controller.set_bit(4)
                     time.sleep(0.1)
                     relay2_controller.clear_bit(4)
                     time.sleep(0.05)
         except ProgramKilled:
-            print("Program killed: running cleanup code")
+            logger.info("Program killed: running cleanup code")
             job.stop()
             break

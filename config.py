@@ -1,4 +1,25 @@
 import json
+import logging
+
+FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+
+logging.basicConfig(filename='debug.log', format=FORMAT)
+logger = logging.getLogger("main")
+
+logger.setLevel(level=logging.DEBUG)
+
+# create console handler and set level to debug
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+
+# create formatter
+formatter = logging.Formatter(FORMAT)
+
+# add formatter to ch
+ch.setFormatter(formatter)
+
+# add ch to logger
+logger.addHandler(ch)
 
 
 class DBConfig:
