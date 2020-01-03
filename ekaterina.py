@@ -15,8 +15,7 @@ db_connection = None
 bus = smbus.SMBus(1)
 doors_lock_pin = 26
 lock_tongue_pin = 20
-open_lock_cmd = 1
-close_lock_cmd = 2
+
 relay1_controller = RelayController(0x38)
 relay2_controller = RelayController(0x39)
 
