@@ -26,7 +26,7 @@ relay2_controller.clear_bit(6) # красный
 data = bus.read_byte(0x38)
 data1 = bus.read_byte(0x39)
 
-logger.info(str(bin(data), bin(data1)))
+logger.info(str(bin(data) + " " + bin(data1)))
 
 active_cards = []
 
