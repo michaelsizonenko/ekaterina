@@ -19,9 +19,9 @@ lock_tongue_pin = 20
 relay1_controller = RelayController(0x38)
 relay2_controller = RelayController(0x39)
 
-relay2_controller.clear_bit(0)
-relay2_controller.clear_bit(2)
-relay2_controller.clear_bit(4)
+relay2_controller.clear_bit(4) # зеленый
+relay2_controller.clear_bit(5) # синий
+relay2_controller.clear_bit(6) # красный
 
 data = bus.read_byte(0x38)
 data1 = bus.read_byte(0x39)
@@ -51,13 +51,13 @@ def lock_door_from_inside(pin):  # проверка сработки внут з
     if not pin26_state:
         time.sleep(0.01)
         if not pin26_state:
-            relay2_controller.set_bit(2)
+            relay2_controller.set_bit(6)
 
             logger.info("Callback for {pin} pin. The door has been locked from inside. Counter : {counter}"
                   .format(pin=pin, counter=close_door_from_inside_counter))
             close_door_from_inside_counter = close_door_from_inside_counter + 1
             return
-    relay2_controller.clear_bit(2)
+    relay2_controller.clear_bit(6)
 
 
 # pin#20 callback
@@ -121,9 +121,9 @@ def permit_open_door():
 
         for i in range(5):
             relay2_controller.set_bit(4)
-            relay2_controller.clear_bit(0)
+            relay2_controller.clear_bit(6)
             time.sleep(0.1)
-            relay2_controller.set_bit(0)
+            relay2_controller.set_bit(6)
             relay2_controller.clear_bit(4)
             time.sleep(0.1)
         relay2_controller.clear_bit(0)
@@ -141,9 +141,9 @@ def permit_open_door():
             return
         #        time.sleep(0.1)
 
-        relay2_controller.set_bit(0)
+        relay2_controller.set_bit(4)
         time.sleep(0.1)
-        relay2_controller.clear_bit(0)
+        relay2_controller.clear_bit(4)
         time.sleep(0.05)
 
     close_door()
@@ -246,9 +246,9 @@ if __name__ == "__main__":
             else:
                 logger.info("Unknown key!")
                 for i in range(5):
-                    relay2_controller.set_bit(4)
+                    relay2_controller.set_bit(6)
                     time.sleep(0.1)
-                    relay2_controller.clear_bit(4)
+                    relay2_controller.clear_bit(6)
                     time.sleep(0.05)
         except ProgramKilled:
             logger.info("Program killed: running cleanup code")
