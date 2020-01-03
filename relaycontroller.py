@@ -22,14 +22,14 @@ class RelayController:
         value = self.__bus.read_byte(self.__address)
         print("Set {bit} bit before value {value}".format(value=value, bit=bit))
         value |= 1 << bit
-        print("Set {bit} bit before value {value}".format(value=value, bit=bit))
+        print("Set {bit} bit after value {value}".format(value=value, bit=bit))
         self.__bus.write_byte_data(self.__address, 0x09, value)
 
     def toggle_bit(self, bit):
         value = self.__bus.read_byte(self.__address)
         print("Toggle {bit} bit before value {value}".format(value=value, bit=bit))
         value ^= 1 << bit
-        print("Toggle {bit} bit before value {value}".format(value=value, bit=bit))
+        print("Toggle {bit} bit after value {value}".format(value=value, bit=bit))
         self.__bus.write_byte_data(self.__address, 0x09, value)
 
     def check_bit(self, bit):
