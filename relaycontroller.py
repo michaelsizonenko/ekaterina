@@ -5,33 +5,24 @@ class RelayController:
 
     __address = None
     __bus = None
+    __state = 0xff
 
     def __init__(self, address):
         self.__address = address
         self.__bus = smbus.SMBus(1)
-        self.__bus.write_byte_data(self.__address, 0x09, 0xff)
+        self.__bus.write_byte_data(self.__address, 0x09, self.__state)
 
     def clear_bit(self, bit):
-        value = self.__bus.read_byte(self.__address)
-        print("Clear {bit} bit before value {value}".format(value=value, bit=bit))
-        value &= ~(1 << bit)
-        print("Clear {bit} bit after value {value}".format(value=value, bit=bit))
-        self.__bus.write_byte_data(self.__address, 0x09, value)
+        self.__state &= ~(1 << bit)
+        self.__bus.write_byte_data(self.__address, 0x09, self.__state)
 
     def set_bit(self, bit):
-        value = self.__bus.read_byte(self.__address)
-        print("Set {bit} bit before value {value}".format(value=value, bit=bit))
-        value |= 1 << bit
-        print("Set {bit} bit after value {value}".format(value=value, bit=bit))
-        self.__bus.write_byte_data(self.__address, 0x09, value)
+        self.__state |= 1 << bit
+        self.__bus.write_byte_data(self.__address, 0x09, self.__state)
 
     def toggle_bit(self, bit):
-        value = self.__bus.read_byte(self.__address)
-        print("Toggle {bit} bit before value {value}".format(value=value, bit=bit))
-        value ^= 1 << bit
-        print("Toggle {bit} bit after value {value}".format(value=value, bit=bit))
-        self.__bus.write_byte_data(self.__address, 0x09, value)
+        self.__state ^= 1 << bit
+        self.__bus.write_byte_data(self.__address, 0x09, self.__state)
 
     def check_bit(self, bit):
-        value = self.__bus.read_byte(self.__address)
-        return (value >> bit) & 1
+        return (self.__state >> bit) & 1
