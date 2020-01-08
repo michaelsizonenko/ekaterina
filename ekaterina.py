@@ -384,14 +384,14 @@ def init_room():
     GPIO.add_event_detect(card_key_pin, GPIO.BOTH, f_card_key_pin)                # pin13 (картоприемник)  
     GPIO.add_event_detect(circuit_breaker_pin, GPIO.BOTH, f_circuit_breaker_pin)  # pin12 (цепь допконтактов автоматов)    
     GPIO.add_event_detect(door_pin, GPIO.BOTH, f_door_pin)                        # pin6  (входная дверь)   
-    GPIO.add_event_detect(energy_sensor_pin, GPIO.BOTH, f_energy_sensor_pin)      # pin25 (контроль наличия питания R3 (освещения))    
-    GPIO.add_event_detect(window1_pin, GPIO.BOTH, f_window1_pin)                  # pin24 (окно1-балкон)   
-    GPIO.add_event_detect(window2_pin, GPIO.BOTH, f_window2_pin)                  # pin23 (окно2)    
-    GPIO.add_event_detect(window3_pin, GPIO.BOTH, f_window3_pin)                  # pin22 (окно3)  
+    GPIO.add_event_detect(energy_sensor_pin, GPIO.BOTH, f_energy_sensor_pin, bouncetime=50)      # pin25 (контроль наличия питания R3 (освещения))    
+    GPIO.add_event_detect(window1_pin, GPIO.BOTH, f_window1_pin, bouncetime=50)                  # pin24 (окно1-балкон)   
+    GPIO.add_event_detect(window2_pin, GPIO.BOTH, f_window2_pin, bouncetime=50)                  # pin23 (окно2)    
+    GPIO.add_event_detect(window3_pin, GPIO.BOTH, f_window3_pin, bouncetime=50)                  # pin22 (окно3)  
     GPIO.add_event_detect(switch_main_pin, GPIO.BOTH, f_switch_main_pin, bouncetime=50)          # pin27 (выключатель основного света)    
     GPIO.add_event_detect(switch_bl_pin, GPIO.BOTH, f_switch_bl_pin, bouncetime=50)              # pin18 (выключатель бра левый)    
     GPIO.add_event_detect(switch_br_pin, GPIO.BOTH, f_switch_br_pin, bouncetime=50)              # pin17 (выключатель бра правый)    
-    GPIO.add_event_detect(flooding_sensor_pin, GPIO.BOTH, f_flooding_sensor_pin)  # pin4  (датчик затопления ВЩ)    
+    GPIO.add_event_detect(flooding_sensor_pin, GPIO.BOTH, f_flooding_sensor_pin, bouncetime=50)  # pin4  (датчик затопления ВЩ)    
     
     global bus
     # todo: what is the second parameter ?
