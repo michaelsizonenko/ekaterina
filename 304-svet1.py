@@ -76,46 +76,59 @@ def callback_func(pin):
         r += 1
         print(r)
 
-        if apin27 and not pinBTN27:
+        if apin27 != pinBTN27:
             time.sleep(0.01)
             pinBTN27 = GPIO.input(pin27)
-            if apin27 and not pinBTN27:
+            if apin27 != pinBTN27:
                 cmd39_1 *= -1
                 if cmd39_1 == -1:
                     i2cplate39 = (i2cplate39 & 0b11111110)
                     print(datetime.datetime.today(), "vkl osnov")
+                   
                 if cmd39_1 == 1:
                     i2cplate39 = (i2cplate39 | 0b1)
                     print(datetime.datetime.today(), "otkl osnov")
+                    
                 bus.write_byte_data(0x39, 0xff, i2cplate39)
-                time.sleep(0.1)
+                time.sleep(0.3)
         apin27 = pinBTN27
+        print ("apin27: ", apin27)
 
-        if apin17 and not pinBTN17:
+        if apin17 != pinBTN17:
             time.sleep(0.01)
-            if apin17 and not pinBTN17:
+            pinBTN17 = GPIO.input(pin17)
+            if apin17 != pinBTN17:
                 cmd38_7 *= -1
                 if cmd38_7 == -1:
                     i2cplate38 = (i2cplate38 & 0b10111111)
                     print(datetime.datetime.today(), "vkl BR.R")
+                    
                 if cmd38_7 == 1:
                     i2cplate38 = (i2cplate38 | 0b01000000)
                     print(datetime.datetime.today(), "otkl BR.R")
+                    
                 bus.write_byte_data(0x38, 0xff, i2cplate38)
-                time.sleep(0.1)
+                time.sleep(0.3)
         apin17 = pinBTN17
+        print ("apin17: ", apin17)
 
-        if apin18 and not pinBTN18:
-            cmd38_8 *= -1
-            if cmd38_8 == -1:
-                i2cplate38 = (i2cplate38 & 0b01111111)
-                print(datetime.datetime.today(), "vkl BR.L")
-            if cmd38_8 == 1:
-                i2cplate38 = (i2cplate38 | 0b10000000)
-                print(datetime.datetime.today(), "otkl BR.L")
-            bus.write_byte_data(0x38, 0xff, i2cplate38)
-            time.sleep(0.1)
-        apin18 = pinBTN18
+        if apin18 != pinBTN18:
+            time.sleep(0.01)
+            pinBTN18 = GPIO.input(pin18)            
+            if apin18 != pinBTN18:
+                cmd38_8 *= -1
+                if cmd38_8 == -1:
+                    i2cplate38 = (i2cplate38 & 0b01111111)
+                    print(datetime.datetime.today(), "vkl BR.L")
+                    
+                if cmd38_8 == 1:
+                    i2cplate38 = (i2cplate38 | 0b10000000)
+                    print(datetime.datetime.today(), "otkl BR.L")
+                    
+                bus.write_byte_data(0x38, 0xff, i2cplate38)
+                time.sleep(0.3)
+            apin18 = pinBTN18
+            print ("apin18: ", apin18)
 
 
 GPIO.add_event_detect(pin17, GPIO.FALLING, callback=callback_func)

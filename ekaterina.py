@@ -8,19 +8,25 @@ import serial
 import RPi.GPIO as GPIO
 from relaycontroller import RelayController
 from config import Config, logger
+#import pdb; pdb.set_trace()
+
+
 
 door_just_closed = False
 can_open_the_door = False
-switch_main = False  # переменная состояния основного света
-switch_bl = False  # переменная состояния бра левый
-switch_br = False  # переменная состояния бра правый
+
+
+lighting_main = False  # переменная состояния основного света
+lighting_bl = False  # переменная состояния бра левый
+lighting_br = False  # переменная состояния бра правый
 db_connection = None
-print("switch_bl:   ", switch_bl)
-print("switch_br:   ", switch_br)
-print("switch_main: ", switch_main)
+print("lighting_bl:   ", lighting_bl)
+print("lighting_br:   ", lighting_br)
+print("lighting_main: ", lighting_main)
 
 bus = smbus.SMBus(1)
 
+# соответствие пинов
 doors_lock_pin = 26  # защелка запрет (заперто изнутри)
 lock_latch_pin = 20  # сработка язычка замка
 using_key_pin = 16  # использование ключа
@@ -40,9 +46,11 @@ switch_bl_pin = 18  # выключатель бра левый
 switch_br_pin = 17  # выключатель бра правый
 flooding_sensor_pin = 4  # датчик затопления ВЩ
 
+# адреса контроллеров
 relay1_controller = RelayController(0x38)
 relay2_controller = RelayController(0x39)
 
+# соответствие портов контроллеров
 relay1_controller.set_bit(0)  # открыть замок
 relay1_controller.set_bit(1)  # закрыть замок
 relay1_controller.set_bit(2)  # аварийное освещение
@@ -68,7 +76,15 @@ logger.info(str(bin(data) + " " + bin(data1)))
 
 active_cards = []
 
-doors_lock_pin26_state = 1  # защелка запрет (заперто изнутри)
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(doors_lock_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # pin26 (внут защелка (ригель))
+GPIO.setup(lock_latch_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+
+
+
+
+# переменные состояния пинов
+doors_lock_pin26_state = 1 # защелка запрет (заперто изнутри)
 lock_latch_pin20_state = 1  # сработка язычка замка
 using_key_pin16_state = 1  # использование ключа
 safe_pin19_state = 1  # сейф
@@ -104,13 +120,13 @@ def f_lock_door_from_inside_pin(pin):
     doors_lock_pin26_state = GPIO.input(pin)
     if not doors_lock_pin26_state:
         time.sleep(0.01)
+        doors_lock_pin26_state = GPIO.input(pin)
         if not doors_lock_pin26_state:
             relay2_controller.set_bit(6)  # зажигаем красный светодиод
-
             logger.info("Callback for {pin} pin. The door has been locked from inside. Counter : {counter}"
                         .format(pin=pin, counter=close_door_from_inside_counter))
             close_door_from_inside_counter = close_door_from_inside_counter + 1
-            return
+#            return
     time.sleep(0.01)
     if doors_lock_pin26_state:
         relay2_controller.clear_bit(6)  # тушим красный светодиод
@@ -139,7 +155,7 @@ def f_using_key_pin(pin):
     global using_key_pin16_state
     using_key_pin16_state = GPIO.input(pin)
     if not using_key_pin16_state:
-        for i in range(10):
+        for i in range(5):
             logger.info("Callback for {pin} pin. The lock is opened with a key. Counter : {counter}"
                         .format(pin=pin, counter=open_door_counter))
             relay2_controller.set_bit(4)
@@ -162,51 +178,66 @@ def f_safe_pin(pin):
     global safe_pin19_state
     safe_pin19_state = GPIO.input(pin)
     if not safe_pin19_state:
-        logger.info("Callback for {pin} pin. safe. Counter : {counter}"
-                    .format(pin=pin, counter=open_door_counter))
+        time.sleep(0.01)
+        safe_pin19_state = GPIO.input(pin)
+        if not safe_pin19_state:
+            logger.info("Callback for {pin} pin. safe. Counter : {counter}"
+                      .format(pin=pin, counter=open_door_counter))
 
 
-# pin#21 датчик дыма 1
+# pin#21 callback датчик дыма 1
 def f_fire_detector1_pin(pin):
     time.sleep(0.01)
     global fire_detector1_pin21_state
     fire_detector1_pin21_state = GPIO.input(pin)
     if not fire_detector1_pin21_state:
-        logger.info("Callback for {pin} pin. fire_detector1. Counter : {counter}"
-                    .format(pin=pin, counter=open_door_counter))
+        time.sleep(0.01)
+        fire_detector1_pin21_state = GPIO.input(pin)
+        if not fire_detector1_pin21_state:
+            logger.info("Callback for {pin} pin. fire_detector1. Counter : {counter}"
+                      .format(pin=pin, counter=open_door_counter))
 
 
-# pin#5 датчик дыма 2
+# pin#5 callback датчик дыма 2
 def f_fire_detector2_pin(pin):
     time.sleep(0.01)
     global fire_detector2_pin5_state
     fire_detector2_pin5_state = GPIO.input(pin)
     if not fire_detector2_pin5_state:
-        logger.info("Callback for {pin} pin. fire_detector2. Counter : {counter}"
-                    .format(pin=pin, counter=open_door_counter))
+        time.sleep(0.01)
+        fire_detector2_pin5_state = GPIO.input(pin)
+        if not fire_detector2_pin5_state:
+            logger.info("Callback for {pin} pin. fire_detector2. Counter : {counter}"
+                      .format(pin=pin, counter=open_door_counter))
 
 
-# pin#7 датчик дыма 3
+# pin#7 callback датчик дыма 3
 def f_fire_detector3_pin(pin):
     time.sleep(0.01)
     global fire_detector3_pin7_state
     fire_detector3_pin7_state = GPIO.input(pin)
     if not fire_detector3_pin7_state:
-        logger.info("Callback for {pin} pin. card_key. Counter : {counter}"
-                    .format(pin=pin, counter=open_door_counter))
+        time.sleep(0.01)
+        fire_detector3_pin7_state = GPIO.input(pin)
+        if not fire_detector3_pin7_state:
+            logger.info("Callback for {pin} pin. card_key. Counter : {counter}"
+                      .format(pin=pin, counter=open_door_counter))
 
 
-# pin#13 картоприемник
+# pin#13 callback картоприемник
 def f_card_key_pin(pin):
     time.sleep(0.01)
     global card_key_pin13_state
     card_key_pin13_state = GPIO.input(pin)
     if not card_key_pin13_state:
-        logger.info("Callback for {pin} pin. fire_detector1. Counter : {counter}"
+        time.sleep(0.01)
+        card_key_pin13_state = GPIO.input(pin)
+        if not card_key_pin13_state:
+            logger.info("Callback for {pin} pin. fire_detector1. Counter : {counter}"
                     .format(pin=pin, counter=open_door_counter))
 
 
-# pin#12 цепь автоматов
+# pin#12 callback цепь автоматов
 def f_circuit_breaker_pin(pin):
     time.sleep(0.01)
     global circuit_breaker_pin12_state
@@ -216,27 +247,33 @@ def f_circuit_breaker_pin(pin):
                     .format(pin=pin, counter=open_door_counter))
 
 
-# pin#6 входная дверь
+# pin#6 callback входная дверь
 def f_door_pin(pin):
     time.sleep(0.01)
     global door_pin6_state
     door_pin6_state = GPIO.input(pin)
     if not door_pin6_state:
-        logger.info("Callback for {pin} pin. door_pin. Counter : {counter}"
+        time.sleep(0.01)
+        door_pin6_state = GPIO.input(pin)
+        if not door_pin6_state:
+            logger.info("Callback for {pin} pin. door_pin. Counter : {counter}"
                     .format(pin=pin, counter=open_door_counter))
 
 
-# pin#25 контроль наличия питания R3 (освещения)
+# pin#25 callback контроль наличия питания R3 (освещения)
 def f_energy_sensor_pin(pin):
     time.sleep(0.01)
     global energy_sensor_pin25_state
     energy_sensor_pin25_state = GPIO.input(pin)
     if not energy_sensor_pin25_state:
-        logger.info("Callback for {pin} pin. energy_sensor. Counter : {counter}"
+        time.sleep(0.01)
+        energy_sensor_pin25_state = GPIO.input(pin)
+        if not energy_sensor_pin25_state:
+            logger.info("Callback for {pin} pin. energy_sensor. Counter : {counter}"
                     .format(pin=pin, counter=open_door_counter))
 
 
-# pin#24 окно1 (балкон)
+# pin#24 callback окно1 (балкон)
 def f_window1_pin(pin):
     time.sleep(0.01)
     global window1_pin24_state
@@ -247,99 +284,105 @@ def f_window1_pin(pin):
         if not window1_pin24_state:
             logger.info("Callback for {pin} pin. window1. Counter : {counter}"
                         .format(pin=pin, counter=open_door_counter))
-            time.sleep(0.3)
+            time.sleep(0.2)
 
 
-# pin#23 окно2
+# pin#23 callback окно2
 def f_window2_pin(pin):
     time.sleep(0.01)
     global window2_pin23_state
     window2_pin23_state = GPIO.input(pin)
     if not window2_pin23_state:
-        logger.info("Callback for {pin} pin. window2. Counter : {counter}"
+        time.sleep(0.01)
+        window2_pin23_state = GPIO.input(pin)
+        if not window2_pin23_state:
+            logger.info("Callback for {pin} pin. window2. Counter : {counter}"
                     .format(pin=pin, counter=open_door_counter))
 
 
-# pin#22 окно3
+# pin#22 callback окно3
 def f_window3_pin(pin):
     time.sleep(0.01)
     global window3_pin22_state
     window3_pin22_state = GPIO.input(pin)
     if not window3_pin22_state:
-        logger.info("Callback for {pin} pin. window3. Counter : {counter}"
+        time.sleep(0.01)
+        window3_pin22_state = GPIO.input(pin)
+        if not window3_pin22_state:
+            logger.info("Callback for {pin} pin. window3. Counter : {counter}"
                     .format(pin=pin, counter=open_door_counter))
 
 
-# pin#27 выключатель основного света
+# pin#27 callback выключатель основного света
 def f_switch_main_pin(pin):
     time.sleep(0.01)
-    global switch_main_pin27_state, switch_main
+    global switch_main_pin27_state, lighting_main
     switch_main_pin27_state = GPIO.input(pin)
     if not switch_main_pin27_state:
         time.sleep(0.01)
         switch_main_pin27_state = GPIO.input(pin)
         if not switch_main_pin27_state:
-            logger.info("Callback for {pin} pin. switch_main. "
+            logger.info("Callback for {pin} pin. lighting_main. "
                         .format(pin=pin))
-            print("switch_main:   ", switch_main)
-            if not switch_main:
+            if not lighting_main:
                 relay2_controller.clear_bit(0)
-                switch_main = True
+                lighting_main = True
             else:
                 relay2_controller.set_bit(0)
-                switch_main = False
+                lighting_main = False
             time.sleep(0.2)
 
 
-# pin#18 выключатель бра левый
+# pin#18 callback выключатель бра левый
 def f_switch_bl_pin(pin):
     time.sleep(0.01)
-    global switch_bl_pin18_state, switch_bl
+    global switch_bl_pin18_state, lighting_bl
     switch_bl_pin18_state = GPIO.input(pin)
     if not switch_bl_pin18_state:
         time.sleep(0.01)
-        switch_bl_pin18_state = GPIO.input(pin)
+        switch_bl_pin18_state = GPIO.input(18)
         if not switch_bl_pin18_state:
-            logger.info("Callback for {pin} pin. switch_bl. "
+            logger.info("Callback for {pin} pin. lighting_bl. "
                         .format(pin=pin))
-            print("switch_bl:   ", switch_bl)
-            if not switch_bl:
+            if not lighting_bl:
                 relay1_controller.clear_bit(6)
-                switch_bl = True
+                lighting_bl = True
             else:
                 relay1_controller.set_bit(6)
-                switch_bl = False
+                lighting_bl = False
             time.sleep(0.2)
 
 
-# pin#17 выключатель бра правый
+# pin#17 callback выключатель бра правый
 def f_switch_br_pin(pin):
     time.sleep(0.01)
-    global switch_br_pin17_state, switch_br
+    global switch_br_pin17_state, lighting_br
     switch_br_pin17_state = GPIO.input(pin)
     if not switch_br_pin17_state:
         time.sleep(0.01)
         switch_br_pin17_state = GPIO.input(pin)
         if not switch_br_pin17_state:
-            logger.info("Callback for {pin} pin. switch_bl. "
+            logger.info("Callback for {pin} pin. lighting_br. "
                         .format(pin=pin))
-            print("switch_br:   ", switch_br)
-            if not switch_br:
+            if not lighting_br:
                 relay1_controller.clear_bit(7)
-                switch_br = True
+                lighting_br = True
             else:
                 relay1_controller.set_bit(7)
-                switch_br = False
+                lighting_br = False
             time.sleep(0.2)
 
 
-# pin#4 датчик затопления ВЩ
+# pin#4 callback датчик затопления ВЩ
 def f_flooding_sensor_pin(pin):
     time.sleep(0.01)
     global flooding_sensor_pin4_state
     flooding_sensor_pin4_state = GPIO.input(pin)
     if not flooding_sensor_pin4_state:
-        logger.info("Callback for {pin} pin. flooding_sensor. Counter : {counter}"
+        time.sleep(0.01)
+        flooding_sensor_pin4_state = GPIO.input(pin)
+        if not flooding_sensor_pin4_state:
+            logger.info("Callback for {pin} pin. flooding_sensor. Counter : {counter}"
                     .format(pin=pin, counter=open_door_counter))
 
 
@@ -389,25 +432,25 @@ def init_room():
     # детекторы сработки с вызовом ф-ии проверки
     GPIO.add_event_detect(doors_lock_pin, GPIO.BOTH, f_lock_door_from_inside_pin,
                           bouncetime=50)  # pin26 (внут защелки (ригеля))
-    GPIO.add_event_detect(lock_latch_pin, GPIO.BOTH, f_lock_latch_pin)  # pin20 ("язычка")
-    GPIO.add_event_detect(using_key_pin, GPIO.BOTH, f_using_key_pin)  # pin16 (открытие замка механическим ключем)
-    GPIO.add_event_detect(safe_pin, GPIO.BOTH, f_safe_pin)  # pin19 (сейф)
-    GPIO.add_event_detect(fire_detector1_pin, GPIO.BOTH, f_fire_detector1_pin)  # pin21 (датчик дыма 1)
-    GPIO.add_event_detect(fire_detector2_pin, GPIO.BOTH, f_fire_detector2_pin)  # pin5  (датчик дыма 2)
-    GPIO.add_event_detect(fire_detector3_pin, GPIO.BOTH, f_fire_detector3_pin)  # pin7  (датчик дыма 3)
-    GPIO.add_event_detect(card_key_pin, GPIO.BOTH, f_card_key_pin)  # pin13 (картоприемник)
+    GPIO.add_event_detect(lock_latch_pin, GPIO.BOTH, f_lock_latch_pin, bouncetime=50)  # pin20 ("язычка")
+    GPIO.add_event_detect(using_key_pin, GPIO.BOTH, f_using_key_pin, bouncetime=50)  # pin16 (открытие замка механическим ключем)
+    GPIO.add_event_detect(safe_pin, GPIO.FALLING, f_safe_pin, bouncetime=50)  # pin19 (сейф)
+    GPIO.add_event_detect(fire_detector1_pin, GPIO.BOTH, f_fire_detector1_pin, bouncetime=50)  # pin21 (датчик дыма 1)
+    GPIO.add_event_detect(fire_detector2_pin, GPIO.BOTH, f_fire_detector2_pin, bouncetime=50)  # pin5  (датчик дыма 2)
+    GPIO.add_event_detect(fire_detector3_pin, GPIO.BOTH, f_fire_detector3_pin, bouncetime=50)  # pin7  (датчик дыма 3)
+    GPIO.add_event_detect(card_key_pin, GPIO.BOTH, f_card_key_pin, bouncetime=50)  # pin13 (картоприемник)
     GPIO.add_event_detect(circuit_breaker_pin, GPIO.BOTH,
-                          f_circuit_breaker_pin)  # pin12 (цепь допконтактов автоматов)
-    GPIO.add_event_detect(door_pin, GPIO.BOTH, f_door_pin)  # pin6  (входная дверь)
+                          f_circuit_breaker_pin, bouncetime=50)  # pin12 (цепь допконтактов автоматов)
+    GPIO.add_event_detect(door_pin, GPIO.BOTH, f_door_pin, bouncetime=50)  # pin6  (входная дверь)
     GPIO.add_event_detect(energy_sensor_pin, GPIO.BOTH, f_energy_sensor_pin,
                           bouncetime=50)  # pin25 (контроль наличия питания R3 (освещения))
     GPIO.add_event_detect(window1_pin, GPIO.BOTH, f_window1_pin, bouncetime=50)  # pin24 (окно1-балкон)
     GPIO.add_event_detect(window2_pin, GPIO.BOTH, f_window2_pin, bouncetime=50)  # pin23 (окно2)
     GPIO.add_event_detect(window3_pin, GPIO.BOTH, f_window3_pin, bouncetime=50)  # pin22 (окно3)
-    GPIO.add_event_detect(switch_main_pin, GPIO.BOTH, f_switch_main_pin,
+    GPIO.add_event_detect(switch_main_pin, GPIO.FALLING, f_switch_main_pin,
                           bouncetime=50)  # pin27 (выключатель основного света)
-    GPIO.add_event_detect(switch_bl_pin, GPIO.BOTH, f_switch_bl_pin, bouncetime=50)  # pin18 (выключатель бра левый)
-    GPIO.add_event_detect(switch_br_pin, GPIO.BOTH, f_switch_br_pin,
+    GPIO.add_event_detect(switch_bl_pin, GPIO.FALLING, f_switch_bl_pin, bouncetime=50)  # pin18 (выключатель бра левый)
+    GPIO.add_event_detect(switch_br_pin, GPIO.FALLING, f_switch_br_pin,
                           bouncetime=50)  # pin17 (выключатель бра правый)
     GPIO.add_event_detect(flooding_sensor_pin, GPIO.BOTH, f_flooding_sensor_pin,
                           bouncetime=50)  # pin4  (датчик затопления ВЩ)
@@ -491,6 +534,72 @@ def wait_rfid1():
 def signal_handler(signum, frame):
     raise ProgramKilled
 
+class Pin(threading.Thread):
+    
+    def __init__(self, interval):
+        global switch_main_pin27_state, switch_bl_pin18_state, switch_br_pin17_state
+        threading.Thread.__init__(self)
+        self.daemon = False
+        self.stopped = threading.Event()
+        self.interval = interval
+       
+        
+            
+        
+    def stop(self):
+        self.stopped.set()
+        self.join()
+    
+    def run(self):
+        global switch_main_pin27_state, switch_bl_pin18_state, switch_br_pin17_state
+                        
+                       
+        while not self.stopped.wait(self.interval.total_seconds()):
+            f_switch_main_pin(switch_main_pin)
+            f_switch_bl_pin(switch_bl_pin)
+            f_switch_br_pin(switch_br_pin)
+            
+#            f_lock_door_from_inside_pin
+#            f_safe_pin 
+#            f_fire_detector1_pin 
+#            f_fire_detector2_pin 
+#            f_fire_detector3_pin 
+#            f_card_key_pin 
+#            f_circuit_breaker_pin 
+#            f_door_pin 
+#            f_energy_sensor_pin 
+#            f_window1_pin 
+#            f_window2_pin 
+#            f_window3_pin 
+#            f_switch_main_pin 
+#            f_switch_bl_pin 
+#            f_switch_br_pin 
+#            f_flooding_sensor_pin  
+            
+            
+            print ("pin_state           :", lighting_bl, 
+                   lighting_br, 
+                   lighting_main, 
+                   doors_lock_pin26_state, 
+                   safe_pin19_state, 
+                   fire_detector1_pin21_state, 
+                   fire_detector2_pin5_state, 
+                   fire_detector3_pin7_state, 
+                   card_key_pin13_state, 
+                   circuit_breaker_pin12_state, 
+                   door_pin6_state, 
+                   energy_sensor_pin25_state, 
+                   window1_pin24_state, 
+                   window2_pin23_state, 
+                   window3_pin22_state, 
+                   switch_main_pin27_state, 
+                   switch_bl_pin18_state, 
+                   switch_br_pin17_state, 
+                   flooding_sensor_pin4_state)
+            
+            print ("GPIO IN - 27, 18, 17: ", GPIO.input(27), GPIO.input(18), GPIO.input(17))
+
+
 
 class Job(threading.Thread):
     def __init__(self, interval, execute, *args, **kwargs):
@@ -509,6 +618,7 @@ class Job(threading.Thread):
     def run(self):
         while not self.stopped.wait(self.interval.total_seconds()):
             self.execute(*self.args, **self.kwargs)
+            
 
 
 if __name__ == "__main__":
@@ -517,7 +627,8 @@ if __name__ == "__main__":
     get_active_cards()
     job = Job(interval=timedelta(seconds=config.new_key_check_interval), execute=get_active_cards)
     job.start()
-
+    pin = Pin(interval=timedelta(seconds=5))
+    pin.start()
     init_room()
 
     while True:
