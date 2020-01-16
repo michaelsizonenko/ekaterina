@@ -555,26 +555,23 @@ class Pin(threading.Thread):
                         
                        
         while not self.stopped.wait(self.interval.total_seconds()):
+            
+            f_lock_door_from_inside_pin(doors_lock_pin)
+            f_safe_pin(safe_pin)
+            f_fire_detector1_pin(fire_detector1_pin) 
+            f_fire_detector2_pin(fire_detector2_pin)
+            f_fire_detector3_pin(fire_detector3_pin)
+            f_card_key_pin(card_key_pin)
+            f_circuit_breaker_pin(circuit_breaker_pin)
+            f_door_pin(door_pin)
+            f_energy_sensor_pin(energy_sensor_pin)
+            f_window1_pin(window1_pin)
+            f_window2_pin(window2_pin)
+            f_window3_pin(window3_pin)
             f_switch_main_pin(switch_main_pin)
             f_switch_bl_pin(switch_bl_pin)
             f_switch_br_pin(switch_br_pin)
-            
-#            f_lock_door_from_inside_pin
-#            f_safe_pin 
-#            f_fire_detector1_pin 
-#            f_fire_detector2_pin 
-#            f_fire_detector3_pin 
-#            f_card_key_pin 
-#            f_circuit_breaker_pin 
-#            f_door_pin 
-#            f_energy_sensor_pin 
-#            f_window1_pin 
-#            f_window2_pin 
-#            f_window3_pin 
-#            f_switch_main_pin 
-#            f_switch_bl_pin 
-#            f_switch_br_pin 
-#            f_flooding_sensor_pin  
+            f_flooding_sensor_pin(flooding_sensor_pin)
             
             
             print ("pin_state           :", lighting_bl, 
