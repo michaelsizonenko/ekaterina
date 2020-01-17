@@ -594,10 +594,10 @@ if __name__ == "__main__":
     get_active_cards()
     card_task = CheckActiveCardsTask(interval=timedelta(seconds=system_config.new_key_check_interval), execute=get_active_cards)
     card_task.start()
+    init_room()
     check_pins()
     check_pin_task = CheckPinTask(interval=timedelta(seconds=system_config.check_pin_timeout), execute=check_pins)
     check_pin_task.start()
-    init_room()
 
     while True:
         try:
