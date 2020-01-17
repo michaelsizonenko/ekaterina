@@ -28,12 +28,16 @@ class PinController:
         raise NotImplementedError
 
     def check_pin(self):
-        self.handler(self.pin)
+        self.handler("Check for {pin} pin".format(pin=self.pin))
 
-    def handler(self, pin):
+    def handler(self, message):
+        logger.info(message)
         time.sleep(0.01)
         self.state = GPIO.input(self.pin)
-        self.callback(self)          
+        self.callback(self)
+
+    def gpio_wrapper(self, pin):
+        self.handler("Callback handler for pin {pin}".format(pin=pin))
 
     def __init__(self, pin, callback, up_down=GPIO.PUD_UP, react_on=GPIO.BOTH):
         logger.info("Pin controller for {} pin initiated".format(pin))
@@ -43,7 +47,7 @@ class PinController:
         self.up_down = up_down
         GPIO.setup(self.pin, GPIO.IN, pull_up_down=self.up_down)
         self.callback = callback
-        GPIO.add_event_detect(self.pin, react_on, self.handler, bouncetime=50)
+        GPIO.add_event_detect(self.pin, react_on, self.gpio_wrapper, bouncetime=50)
 
 
 
