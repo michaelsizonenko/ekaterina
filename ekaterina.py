@@ -335,7 +335,7 @@ def check_pins():
         room_controller[item].check_pin()
     state_message = "Pin state          :"
     for item in pin_list_for_check:
-        state_message += " " + item.state + ", "
+        state_message += " " + room_controller[item].state + ", "
 
     print("GPIO IN - 27, 18, 17: ", GPIO.input(27), GPIO.input(18), GPIO.input(17))
 
