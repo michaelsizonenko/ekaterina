@@ -541,7 +541,7 @@ class Pin(threading.Thread):
         global switch_main_pin27_state, switch_bl_pin18_state, switch_br_pin17_state
 
         while not self.stopped.wait(self.interval.total_seconds()):
-            pin26ctl.handler()
+            pin26ctl.check_pin()
             f_safe_pin(safe_pin)
             f_fire_detector1_pin(fire_detector1_pin)
             f_fire_detector2_pin(fire_detector2_pin)
