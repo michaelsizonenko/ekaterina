@@ -40,7 +40,7 @@ class PinController:
         self.handler("Callback handler for pin {pin}".format(pin=pin))
 
     def __init__(self, pin, callback, up_down=GPIO.PUD_UP, react_on=GPIO.BOTH):
-        logger.info("Pin controller for {} pin initiated".format(pin))
+        logger.info("Pin controller for {} pin has been initiated".format(pin))
         self.pin = self.validate_pin(pin)
         assert (up_down in (GPIO.PUD_UP, GPIO.PUD_DOWN)), \
             "This is weird! Pull-up-down parameter can be either UP or DOWN. {} given".format(up_down)
