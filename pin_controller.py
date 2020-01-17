@@ -21,16 +21,20 @@ class PinController:
         return pin
 
     def callback(self):
-        raise NotImplementedError
+        pass
 
     def check_pin(self):
         self.handler("Check for {pin} pin".format(pin=self.pin))
 
     def handler(self, message):
-        logger.info(message)
         time.sleep(0.01)
         self.state = GPIO.input(self.pin)
-        self.callback(self)
+        if not self.state:
+            time.sleep(0.01)
+            self.state = GPIO.input(self.pin)
+            if not self.state:
+                logger.info(message)
+                self.callback(self)
 
     def gpio_wrapper(self, pin):
         self.handler("Callback handler for pin {pin}".format(pin=pin))
