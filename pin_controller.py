@@ -62,3 +62,7 @@ class PinController:
 #     time.sleep(0.01)
 #     if doors_lock_pin26_state:
 #         relay2_controller.clear_bit(6)  # тушим красный светодиод
+
+# GPIO.setup(doors_lock_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # pin26 (внут защелка (ригель))
+# GPIO.add_event_detect(doors_lock_pin, GPIO.BOTH, f_lock_door_from_inside_pin,
+#                       bouncetime=50)  # pin26 (внут защелки (ригеля))

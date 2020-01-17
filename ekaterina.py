@@ -394,10 +394,13 @@ def close_door():
     logger.info("Client has been entered!")
 
 
+pin26ctl = None
+
+
 def init_room():
     logger.info("Init room")
-    PinController(26, f_lock_door_from_inside)
-    # GPIO.setup(doors_lock_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # pin26 (внут защелка (ригель))
+    global pin26ctl
+    pin26ctl = PinController(26, f_lock_door_from_inside)
     GPIO.setup(lock_latch_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # pin20 ("язычка")
     GPIO.setup(using_key_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # pin16 (открытие замка механическим ключем)
     GPIO.setup(safe_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # pin19 (сейф)
@@ -417,8 +420,6 @@ def init_room():
     GPIO.setup(flooding_sensor_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # pin4  датчик затопления ВЩ
 
     # детекторы сработки с вызовом ф-ии проверки
-    # GPIO.add_event_detect(doors_lock_pin, GPIO.BOTH, f_lock_door_from_inside_pin,
-    #                       bouncetime=50)  # pin26 (внут защелки (ригеля))
     GPIO.add_event_detect(lock_latch_pin, GPIO.BOTH, f_lock_latch_pin, bouncetime=50)  # pin20 ("язычка")
     GPIO.add_event_detect(using_key_pin, GPIO.BOTH, f_using_key_pin,
                           bouncetime=50)  # pin16 (открытие замка механическим ключем)
@@ -540,7 +541,7 @@ class Pin(threading.Thread):
         global switch_main_pin27_state, switch_bl_pin18_state, switch_br_pin17_state
 
         while not self.stopped.wait(self.interval.total_seconds()):
-            # f_lock_door_from_inside_pin(doors_lock_pin)
+            pin26ctl.handler()
             f_safe_pin(safe_pin)
             f_fire_detector1_pin(fire_detector1_pin)
             f_fire_detector2_pin(fire_detector2_pin)
