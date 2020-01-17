@@ -554,7 +554,6 @@ def signal_handler(signum, frame):
 class CheckPinTask(threading.Thread):
 
     def __init__(self, interval, execute):
-        global switch_main_pin27_state, switch_bl_pin18_state, switch_br_pin17_state
         threading.Thread.__init__(self)
         self.daemon = False
         self.stopped = threading.Event()
@@ -566,8 +565,6 @@ class CheckPinTask(threading.Thread):
         self.join()
 
     def run(self):
-        global switch_main_pin27_state, switch_bl_pin18_state, switch_br_pin17_state
-
         while not self.stopped.wait(self.interval.total_seconds()):
             self.execute()
 
@@ -595,10 +592,11 @@ if __name__ == "__main__":
     signal.signal(signal.SIGTERM, signal_handler)
     signal.signal(signal.SIGINT, signal_handler)
     get_active_cards()
-    job = CheckActiveCardsTask(interval=timedelta(seconds=system_config.new_key_check_interval), execute=get_active_cards)
-    job.start()
-    pin = CheckPinTask(interval=timedelta(seconds=system_config.check_pin_timeout), execute=check_pins)
-    pin.start()
+    card_task = CheckActiveCardsTask(interval=timedelta(seconds=system_config.new_key_check_interval), execute=get_active_cards)
+    card_task.start()
+    check_pins()
+    check_pin_task = CheckPinTask(interval=timedelta(seconds=system_config.check_pin_timeout), execute=check_pins)
+    check_pin_task.start()
     init_room()
 
     while True:
@@ -619,5 +617,6 @@ if __name__ == "__main__":
                     time.sleep(0.05)
         except ProgramKilled:
             logger.info("Program killed: running cleanup code")
-            job.stop()
+            card_task.stop()
+            check_pin_task.stop()
             break
