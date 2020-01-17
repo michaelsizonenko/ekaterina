@@ -123,7 +123,7 @@ def f_lock_door_from_inside(self):
 # pin#20 callback (проверка сработки "язычка" на открытие с последующим вызовом функции "закрытия замка")
 def f_lock_latch(self):
     time.sleep(0.01)
-    self.state = GPIO.input(pin)
+    self.state = GPIO.input(self.pin)
     if not self.state:
         time.sleep(0.01)
         if not self.state:
