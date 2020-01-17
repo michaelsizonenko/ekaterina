@@ -148,16 +148,10 @@ def f_using_key(self):
 
 
 # pin#19 callback (сейф)
-def f_safe_pin(pin):
-    time.sleep(0.01)
-    global safe_pin19_state
-    safe_pin19_state = GPIO.input(pin)
-    if not safe_pin19_state:
+def f_safe(self):
+    if not self.state:
         time.sleep(0.01)
-        safe_pin19_state = GPIO.input(pin)
-        if not safe_pin19_state:
-            logger.info("Callback for {pin} pin. safe. Counter : {counter}"
-                        .format(pin=pin, counter=open_door_counter))
+        self.state = GPIO.input(pin)
 
 
 # pin#21 callback датчик дыма 1
@@ -384,15 +378,16 @@ def close_door():
 pin26ctl = None
 pin20ctl = None
 pin16ctl = None
+pin19ctl = None
 
 
 def init_room():
     logger.info("Init room")
-    global pin26ctl, pin20ctl, pin16ctl
+    global pin26ctl, pin20ctl, pin16ctl, pin19ctl
     pin26ctl = PinController(26, f_lock_door_from_inside)   # pin26
     pin20ctl = PinController(20, f_lock_latch)    # pin20 ("язычка")
     pin16ctl = PinController(16, f_using_key)  # pin16 (открытие замка механическим ключем)
-    GPIO.setup(safe_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # pin19 (сейф)
+    pin19ctl = PinController(19, f_safe, react_on=GPIO.FALLING)  # pin19 (сейф)
     GPIO.setup(fire_detector1_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # pin21 датчик дыма 1
     GPIO.setup(fire_detector2_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # pin5  датчик дыма 2
     GPIO.setup(fire_detector3_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # pin7  датчик дыма 3
@@ -410,7 +405,6 @@ def init_room():
 
     # детекторы сработки с вызовом ф-ии проверки
 
-    GPIO.add_event_detect(safe_pin, GPIO.FALLING, f_safe_pin, bouncetime=50)  # pin19 (сейф)
     GPIO.add_event_detect(fire_detector1_pin, GPIO.BOTH, f_fire_detector1_pin, bouncetime=50)  # pin21 (датчик дыма 1)
     GPIO.add_event_detect(fire_detector2_pin, GPIO.BOTH, f_fire_detector2_pin, bouncetime=50)  # pin5  (датчик дыма 2)
     GPIO.add_event_detect(fire_detector3_pin, GPIO.BOTH, f_fire_detector3_pin, bouncetime=50)  # pin7  (датчик дыма 3)
@@ -514,7 +508,7 @@ def wait_rfid1():
 
 def check_pins():
     pin26ctl.check_pin()
-    f_safe_pin(safe_pin)
+    pin19ctl.check_pin()
     f_fire_detector1_pin(fire_detector1_pin)
     f_fire_detector2_pin(fire_detector2_pin)
     f_fire_detector3_pin(fire_detector3_pin)
