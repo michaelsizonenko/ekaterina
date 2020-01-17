@@ -454,7 +454,8 @@ def init_room():
 def permit_open_door():
     global doors_lock_pin, door_just_closed, can_open_the_door
     if is_door_locked_from_inside():
-
+        logger.info("The door has been locked by the guest.")
+        
         for i in range(5):
             relay2_controller.set_bit(4)
             relay2_controller.clear_bit(6)
@@ -462,8 +463,12 @@ def permit_open_door():
             relay2_controller.set_bit(6)
             relay2_controller.clear_bit(4)
             time.sleep(0.1)
+        
+            
+        if not is_door_locked_from_inside():
+            relay2_controller.clear_bit(6)
 
-        logger.info("The door has been locked by the guest.")
+        
         return
     relay1_controller.clear_bit(0)
     time.sleep(0.08)
