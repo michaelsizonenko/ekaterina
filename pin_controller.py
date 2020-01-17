@@ -44,8 +44,3 @@ class PinController:
         GPIO.setup(self.pin, GPIO.IN, pull_up_down=self.up_down)
         self.callback = callback
         GPIO.add_event_detect(self.pin, react_on, self.gpio_wrapper, bouncetime=50)
-
-
-
-# GPIO.setup(lock_latch_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # pin20 ("язычка")
-# GPIO.add_event_detect(lock_latch_pin, GPIO.BOTH, f_lock_latch_pin, bouncetime=50)

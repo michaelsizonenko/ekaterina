@@ -122,8 +122,6 @@ def f_lock_door_from_inside(self):
 
 # pin#20 callback (проверка сработки "язычка" на открытие с последующим вызовом функции "закрытия замка")
 def f_lock_latch(self):
-    time.sleep(0.01)
-    self.state = GPIO.input(self.pin)
     if not self.state:
         time.sleep(0.01)
         if not self.state:
@@ -132,14 +130,9 @@ def f_lock_latch(self):
 
 
 # pin#16 callback (использование ключа)
-def f_using_key_pin(pin):
-    time.sleep(0.01)
-    global using_key_pin16_state
-    using_key_pin16_state = GPIO.input(pin)
-    if not using_key_pin16_state:
+def f_using_key(self):
+    if not self.state:
         for i in range(5):
-            logger.info("Callback for {pin} pin. The lock is opened with a key. Counter : {counter}"
-                        .format(pin=pin, counter=open_door_counter))
             relay2_controller.set_bit(4)
             time.sleep(0.3)
             relay2_controller.clear_bit(4)
@@ -390,14 +383,15 @@ def close_door():
 
 pin26ctl = None
 pin20ctl = None
+pin16ctl = None
 
 
 def init_room():
     logger.info("Init room")
-    global pin26ctl
+    global pin26ctl, pin20ctl, pin16ctl
     pin26ctl = PinController(26, f_lock_door_from_inside)   # pin26
     pin20ctl = PinController(20, f_lock_latch)    # pin20 ("язычка")
-    GPIO.setup(using_key_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # pin16 (открытие замка механическим ключем)
+    pin16ctl = PinController(16, f_using_key)  # pin16 (открытие замка механическим ключем)
     GPIO.setup(safe_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # pin19 (сейф)
     GPIO.setup(fire_detector1_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # pin21 датчик дыма 1
     GPIO.setup(fire_detector2_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # pin5  датчик дыма 2
@@ -415,8 +409,7 @@ def init_room():
     GPIO.setup(flooding_sensor_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # pin4  датчик затопления ВЩ
 
     # детекторы сработки с вызовом ф-ии проверки
-    GPIO.add_event_detect(using_key_pin, GPIO.BOTH, f_using_key_pin,
-                          bouncetime=50)  # pin16 (открытие замка механическим ключем)
+
     GPIO.add_event_detect(safe_pin, GPIO.FALLING, f_safe_pin, bouncetime=50)  # pin19 (сейф)
     GPIO.add_event_detect(fire_detector1_pin, GPIO.BOTH, f_fire_detector1_pin, bouncetime=50)  # pin21 (датчик дыма 1)
     GPIO.add_event_detect(fire_detector2_pin, GPIO.BOTH, f_fire_detector2_pin, bouncetime=50)  # pin5  (датчик дыма 2)
