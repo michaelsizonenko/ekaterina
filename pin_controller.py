@@ -27,13 +27,11 @@ class PinController:
     def callback(self):
         raise NotImplementedError
 
-    def handler(self):
+    def handler(self, pin):
+        logger.info("Test handler: {self} ; {pin}".format(self=self, pin=pin))
         time.sleep(0.01)
         self.state = GPIO.input(self.pin)
-        if not self.state:
-            time.sleep(0.01)
-            self.state = GPIO.input(self.pin)
-            self.callback()
+        self.callback()          
 
     def __init__(self, pin, callback, up_down=GPIO.PUD_UP, react_on=GPIO.BOTH):
         self.pin = self.validate_pin(pin)

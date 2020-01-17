@@ -108,10 +108,13 @@ class ProgramKilled(Exception):
 
 
 # pin#26 callback (проверка сработки внут защелки (ригеля) на закрытие)
-def f_lock_door_from_inside(self):
+def f_lock_door_from_inside():
     if not self.state:
-        relay2_controller.set_bit(6)  # зажигаем красный светодиод
-        logger.info("Callback for {pin} pin. The door has been locked from inside.".format(pin=self.pin))
+            time.sleep(0.01)
+            self.state = GPIO.input(self.pin)
+            if not self.state:
+                relay2_controller.set_bit(6)  # зажигаем красный светодиод
+                logger.info("Callback for {pin} pin. The door has been locked from inside.".format(pin=self.pin))
     time.sleep(0.01)
     if self.state:
         relay2_controller.clear_bit(6)  # тушим красный светодиод
