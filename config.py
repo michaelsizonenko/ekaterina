@@ -42,3 +42,6 @@ class Config:
         self.new_key_check_interval = config_data["new_key_check_interval"]
         self.rfig_key_table_index = config_data["rfig_key_table_index"]
         self.rfid_key_length = config_data["rfid_key_length"]
+
+
+system_config = Config()
