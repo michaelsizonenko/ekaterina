@@ -20,7 +20,10 @@ class PinController:
             raise Exception("BCM mode provide numbers [0; 27]. {} given.".format(pin))
         return pin
 
-    def callback(self):
+    def callback(self, data):
+        pass
+
+    def before_callback(self, data):
         pass
 
     def check_pin(self):
@@ -29,6 +32,7 @@ class PinController:
     def handler(self, message):
         time.sleep(0.01)
         self.state = GPIO.input(self.pin)
+        self.before_callback(self)
         if not self.state:
             time.sleep(0.01)
             self.state = GPIO.input(self.pin)
@@ -39,7 +43,7 @@ class PinController:
     def gpio_wrapper(self, pin):
         self.handler("Callback handler for pin {pin}".format(pin=pin))
 
-    def __init__(self, pin, callback, up_down=GPIO.PUD_UP, react_on=GPIO.BOTH):
+    def __init__(self, pin, callback, up_down=GPIO.PUD_UP, react_on=GPIO.BOTH, before_callback=None):
         logger.info("Pin controller for {} pin has been initiated".format(pin))
         self.pin = self.validate_pin(pin)
         assert (up_down in (GPIO.PUD_UP, GPIO.PUD_DOWN)), \
@@ -47,4 +51,6 @@ class PinController:
         self.up_down = up_down
         GPIO.setup(self.pin, GPIO.IN, pull_up_down=self.up_down)
         self.callback = callback
+        if before_callback:
+            self.before_callback = before_callback
         GPIO.add_event_detect(self.pin, react_on, self.gpio_wrapper, bouncetime=50)

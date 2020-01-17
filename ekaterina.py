@@ -72,10 +72,12 @@ class ProgramKilled(Exception):
 # pin#26 callback (проверка сработки внут защелки (ригеля) на закрытие)
 def f_lock_door_from_inside(self):
     relay2_controller.set_bit(6)  # зажигаем красный светодиод
-    # TODO: find a way
-    # time.sleep(0.01)
-    # if self.state:
-    #     relay2_controller.clear_bit(6)  # тушим красный светодиод
+
+
+def f_before_lock_door_from_inside(self):
+    time.sleep(0.01)
+    if self.state:
+        relay2_controller.clear_bit(6)  # тушим красный светодиод
 
 
 # pin#20 callback (проверка сработки "язычка" на открытие с последующим вызовом функции "закрытия замка")
@@ -244,7 +246,7 @@ def init_room():
         23: PinController(23, f_window2),  # pin23 (окно2)
         24: PinController(24, f_window1),  # pin24 (окно1-балкон)
         25: PinController(25, f_energy_sensor),  # pin25 (контроль наличия питания R3 (освещения))
-        26: PinController(26, f_lock_door_from_inside),  # pin26
+        26: PinController(26, f_lock_door_from_inside, before_callback=f_before_lock_door_from_inside),  # pin26
         27: PinController(27, f_switch_main, react_on=GPIO.FALLING),  # pin27 выключатель основного света
     }
 
@@ -333,7 +335,7 @@ def check_pins():
     pin_list_for_check = [26, 19, 21, 5, 7, 13, 12, 6, 25, 24, 23, 22, 27, 18, 17, 4]
     for item in pin_list_for_check:
         room_controller[item].check_pin()
-    state_message = "Pin state          :"
+    state_message = "Pin state : "
     for item in pin_list_for_check:
         state_message += "pin#{pin}:{state}, ".format(pin=room_controller[item].pin, state=room_controller[item].state)
     print(state_message)
