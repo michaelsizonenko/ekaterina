@@ -512,18 +512,60 @@ def wait_rfid1():
     return key_
 
 
+def check_pins():
+    pin26ctl.check_pin()
+    f_safe_pin(safe_pin)
+    f_fire_detector1_pin(fire_detector1_pin)
+    f_fire_detector2_pin(fire_detector2_pin)
+    f_fire_detector3_pin(fire_detector3_pin)
+    f_card_key_pin(card_key_pin)
+    f_circuit_breaker_pin(circuit_breaker_pin)
+    f_door_pin(door_pin)
+    f_energy_sensor_pin(energy_sensor_pin)
+    f_window1_pin(window1_pin)
+    f_window2_pin(window2_pin)
+    f_window3_pin(window3_pin)
+    f_switch_main_pin(switch_main_pin)
+    f_switch_bl_pin(switch_bl_pin)
+    f_switch_br_pin(switch_br_pin)
+    f_flooding_sensor_pin(flooding_sensor_pin)
+
+    print("pin_state           :", lighting_bl,
+          lighting_br,
+          lighting_main,
+          doors_lock_pin26_state,
+          safe_pin19_state,
+          fire_detector1_pin21_state,
+          fire_detector2_pin5_state,
+          fire_detector3_pin7_state,
+          card_key_pin13_state,
+          circuit_breaker_pin12_state,
+          door_pin6_state,
+          energy_sensor_pin25_state,
+          window1_pin24_state,
+          window2_pin23_state,
+          window3_pin22_state,
+          switch_main_pin27_state,
+          switch_bl_pin18_state,
+          switch_br_pin17_state,
+          flooding_sensor_pin4_state)
+
+    print("GPIO IN - 27, 18, 17: ", GPIO.input(27), GPIO.input(18), GPIO.input(17))
+
+
 def signal_handler(signum, frame):
     raise ProgramKilled
 
 
-class Pin(threading.Thread):
+class CheckPinTask(threading.Thread):
 
-    def __init__(self, interval):
+    def __init__(self, interval, execute):
         global switch_main_pin27_state, switch_bl_pin18_state, switch_br_pin17_state
         threading.Thread.__init__(self)
         self.daemon = False
         self.stopped = threading.Event()
         self.interval = interval
+        self.execute = execute
 
     def stop(self):
         self.stopped.set()
@@ -533,47 +575,10 @@ class Pin(threading.Thread):
         global switch_main_pin27_state, switch_bl_pin18_state, switch_br_pin17_state
 
         while not self.stopped.wait(self.interval.total_seconds()):
-            pin26ctl.check_pin()
-            f_safe_pin(safe_pin)
-            f_fire_detector1_pin(fire_detector1_pin)
-            f_fire_detector2_pin(fire_detector2_pin)
-            f_fire_detector3_pin(fire_detector3_pin)
-            f_card_key_pin(card_key_pin)
-            f_circuit_breaker_pin(circuit_breaker_pin)
-            f_door_pin(door_pin)
-            f_energy_sensor_pin(energy_sensor_pin)
-            f_window1_pin(window1_pin)
-            f_window2_pin(window2_pin)
-            f_window3_pin(window3_pin)
-            f_switch_main_pin(switch_main_pin)
-            f_switch_bl_pin(switch_bl_pin)
-            f_switch_br_pin(switch_br_pin)
-            f_flooding_sensor_pin(flooding_sensor_pin)
-
-            print("pin_state           :", lighting_bl,
-                  lighting_br,
-                  lighting_main,
-                  doors_lock_pin26_state,
-                  safe_pin19_state,
-                  fire_detector1_pin21_state,
-                  fire_detector2_pin5_state,
-                  fire_detector3_pin7_state,
-                  card_key_pin13_state,
-                  circuit_breaker_pin12_state,
-                  door_pin6_state,
-                  energy_sensor_pin25_state,
-                  window1_pin24_state,
-                  window2_pin23_state,
-                  window3_pin22_state,
-                  switch_main_pin27_state,
-                  switch_bl_pin18_state,
-                  switch_br_pin17_state,
-                  flooding_sensor_pin4_state)
-
-            print("GPIO IN - 27, 18, 17: ", GPIO.input(27), GPIO.input(18), GPIO.input(17))
+            self.execute()
 
 
-class Job(threading.Thread):
+class CheckActiveCardsTask(threading.Thread):
     def __init__(self, interval, execute, *args, **kwargs):
         threading.Thread.__init__(self)
         self.daemon = False
@@ -596,9 +601,9 @@ if __name__ == "__main__":
     signal.signal(signal.SIGTERM, signal_handler)
     signal.signal(signal.SIGINT, signal_handler)
     get_active_cards()
-    job = Job(interval=timedelta(seconds=system_config.new_key_check_interval), execute=get_active_cards)
+    job = CheckActiveCardsTask(interval=timedelta(seconds=system_config.new_key_check_interval), execute=get_active_cards)
     job.start()
-    pin = Pin(interval=timedelta(seconds=10))
+    pin = CheckPinTask(interval=timedelta(seconds=system_config.check_pin_timeout), execute=check_pins)
     pin.start()
     init_room()
 
