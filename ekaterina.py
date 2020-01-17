@@ -114,25 +114,19 @@ def f_lock_door_from_inside(self):
             self.state = GPIO.input(self.pin)
             if not self.state:
                 relay2_controller.set_bit(6)  # зажигаем красный светодиод
-                logger.info("Callback for {pin} pin. The door has been locked from inside.".format(pin=self.pin))
+                logger.info("The door has been locked from inside.")
     time.sleep(0.01)
     if self.state:
         relay2_controller.clear_bit(6)  # тушим красный светодиод
 
 
 # pin#20 callback (проверка сработки "язычка" на открытие с последующим вызовом функции "закрытия замка")
-def f_lock_latch_pin(pin):
+def f_lock_latch(self):
     time.sleep(0.01)
-    global lock_latch_pin20_state, open_door_counter
-    lock_latch_pin20_state = GPIO.input(pin)
-    if not lock_latch_pin20_state:
+    self.state = GPIO.input(pin)
+    if not self.state:
         time.sleep(0.01)
-        if not lock_latch_pin20_state:
-            logger.info("Callback for {pin} pin. The door has been openned. Counter : {counter}"
-                        .format(pin=pin, counter=open_door_counter))
-            open_door_counter = open_door_counter + 1
-            #            if is_door_locked_from_inside():                                     # ???????
-            #                return
+        if not self.state:
             time.sleep(1)
             close_door()
 
@@ -395,13 +389,14 @@ def close_door():
 
 
 pin26ctl = None
+pin20ctl = None
 
 
 def init_room():
     logger.info("Init room")
     global pin26ctl
-    pin26ctl = PinController(26, f_lock_door_from_inside)
-    GPIO.setup(lock_latch_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # pin20 ("язычка")
+    pin26ctl = PinController(26, f_lock_door_from_inside)   # pin26
+    pin20ctl = PinController(20, f_lock_latch)    # pin20 ("язычка")
     GPIO.setup(using_key_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # pin16 (открытие замка механическим ключем)
     GPIO.setup(safe_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # pin19 (сейф)
     GPIO.setup(fire_detector1_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # pin21 датчик дыма 1
@@ -420,7 +415,6 @@ def init_room():
     GPIO.setup(flooding_sensor_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # pin4  датчик затопления ВЩ
 
     # детекторы сработки с вызовом ф-ии проверки
-    GPIO.add_event_detect(lock_latch_pin, GPIO.BOTH, f_lock_latch_pin, bouncetime=50)  # pin20 ("язычка")
     GPIO.add_event_detect(using_key_pin, GPIO.BOTH, f_using_key_pin,
                           bouncetime=50)  # pin16 (открытие замка механическим ключем)
     GPIO.add_event_detect(safe_pin, GPIO.FALLING, f_safe_pin, bouncetime=50)  # pin19 (сейф)

@@ -1,10 +1,6 @@
 import RPi.GPIO as GPIO
 import time
-from config import system_config, logger
-
-
-class PinFactory:
-    pass
+from config import logger
 
 
 class PinController:
@@ -51,24 +47,5 @@ class PinController:
 
 
 
-# # pin#26 callback (проверка сработки внут защелки (ригеля) на закрытие)
-# def f_lock_door_from_inside_pin(pin):
-#     time.sleep(0.01)
-#     global doors_lock_pin26_state, close_door_from_inside_counter
-#     doors_lock_pin26_state = GPIO.input(pin)
-#     if not doors_lock_pin26_state:
-#         time.sleep(0.01)
-#         doors_lock_pin26_state = GPIO.input(pin)
-#         if not doors_lock_pin26_state:
-#             relay2_controller.set_bit(6)  # зажигаем красный светодиод
-#             logger.info("Callback for {pin} pin. The door has been locked from inside. Counter : {counter}"
-#                         .format(pin=pin, counter=close_door_from_inside_counter))
-#             close_door_from_inside_counter = close_door_from_inside_counter + 1
-#     #            return
-#     time.sleep(0.01)
-#     if doors_lock_pin26_state:
-#         relay2_controller.clear_bit(6)  # тушим красный светодиод
-
-# GPIO.setup(doors_lock_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # pin26 (внут защелка (ригель))
-# GPIO.add_event_detect(doors_lock_pin, GPIO.BOTH, f_lock_door_from_inside_pin,
-#                       bouncetime=50)  # pin26 (внут защелки (ригеля))
+# GPIO.setup(lock_latch_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # pin20 ("язычка")
+# GPIO.add_event_detect(lock_latch_pin, GPIO.BOTH, f_lock_latch_pin, bouncetime=50)
