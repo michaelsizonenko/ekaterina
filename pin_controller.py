@@ -31,9 +31,10 @@ class PinController:
         logger.info("Test handler: {self} ; {pin}".format(self=self, pin=pin))
         time.sleep(0.01)
         self.state = GPIO.input(self.pin)
-        self.callback()          
+        self.callback(self)          
 
     def __init__(self, pin, callback, up_down=GPIO.PUD_UP, react_on=GPIO.BOTH):
+        logger.info("Pin controller for {} pin initiated".format(pin))
         self.pin = self.validate_pin(pin)
         assert (up_down in (GPIO.PUD_UP, GPIO.PUD_DOWN)), \
             "This is weird! Pull-up-down parameter can be either UP or DOWN. {} given".format(up_down)

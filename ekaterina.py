@@ -108,7 +108,7 @@ class ProgramKilled(Exception):
 
 
 # pin#26 callback (проверка сработки внут защелки (ригеля) на закрытие)
-def f_lock_door_from_inside():
+def f_lock_door_from_inside(self):
     if not self.state:
             time.sleep(0.01)
             self.state = GPIO.input(self.pin)
