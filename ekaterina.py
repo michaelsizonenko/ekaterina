@@ -82,6 +82,7 @@ def f_before_lock_door_from_inside(self):
 
 # pin#20 callback (проверка сработки "язычка" на открытие с последующим вызовом функции "закрытия замка")
 def f_lock_latch(self):
+    time.sleep(1)
     close_door()
 
 
@@ -210,7 +211,7 @@ def close_door():
         logger.info("Door is closed. Permission denied!")  # ????
         return
     relay1_controller.clear_bit(1)
-    time.sleep(0.08)
+    time.sleep(0.1)
     relay1_controller.set_bit(1)
     can_open_the_door = False
     door_just_closed = True
@@ -276,7 +277,7 @@ def permit_open_door():
 
         return
     relay1_controller.clear_bit(0)
-    time.sleep(0.08)
+    time.sleep(0.1)
     relay1_controller.set_bit(0)
     can_open_the_door = True
     for i in range(50):
@@ -415,6 +416,8 @@ if __name__ == "__main__":
                     time.sleep(0.1)
                     relay2_controller.clear_bit(6)
                     time.sleep(0.05)
+                if is_door_locked_from_inside():
+                    relay2_controller.set_bit(6)
         except ProgramKilled:
             logger.info("Program killed: running cleanup code")
             card_task.stop()
