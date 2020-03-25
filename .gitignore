@@ -4,5 +4,5 @@ env/*
 __pycache__/*
 *.save
 *test*
-
+debug.log
 config.json
