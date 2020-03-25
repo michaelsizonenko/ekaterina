@@ -20,14 +20,15 @@ def get_active_cards():
     conn = pymssql.connect(server='192.168.9.241', user='user', password='123', database='kluch')
     cursor = conn.cursor()
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    sql = f"SELECT * FROM table_kluch WHERE dstart <= '{now}' AND dend >= '{now}' AND (tip = 1 OR tip = 0) AND num = {room_number}"
+    sql = "SELECT * FROM table_kluch WHERE dstart <= '{now}' AND dend >= '{now}' AND (tip = 1 OR tip = 0) AND num = {" \
+          "room_number}".format(now=now, room_number=system_config.room_number)
     cursor.execute(sql)
     key_list = cursor.fetchall()
     return [handle_table_row(row) for row in key_list]
 
 
 active_cards = get_active_cards()
-print(f" active cards count {len(active_cards)}")
+print(" active cards count {len(active_cards)}")
 for card in active_cards:
     print(card)
 

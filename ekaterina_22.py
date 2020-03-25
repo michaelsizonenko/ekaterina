@@ -32,7 +32,7 @@ bus = smbus.SMBus(1)
 
 # адреса контроллеров
 relay1_controller = RelayController(0x38)
-relay2_controller = RelayController(0x39)
+#relay2_controller = RelayController(0x39)
 
 # соответствие портов контроллеров
 relay1_controller.set_bit(0)  # открыть замок
@@ -44,19 +44,19 @@ relay1_controller.set_bit(5)  # R3
 relay1_controller.set_bit(6)  # бра левый
 relay1_controller.set_bit(7)  # бра правый
 
-relay2_controller.set_bit(0)  # свет спальня
-relay2_controller.set_bit(1)  # кондиционеры
-relay2_controller.set_bit(2)  # радиатор1
-relay2_controller.set_bit(3)  # радиатор2
-relay2_controller.clear_bit(4)  # зеленый
-relay2_controller.clear_bit(5)  # синий
-relay2_controller.clear_bit(6)  # красный
-relay2_controller.set_bit(7)  # резерв
+#relay2_controller.set_bit(0)  # свет спальня
+#relay2_controller.set_bit(1)  # кондиционеры
+#relay2_controller.set_bit(2)  # радиатор1
+#relay2_controller.set_bit(3)  # радиатор2
+#relay2_controller.clear_bit(4)  # зеленый
+#relay2_controller.clear_bit(5)  # синий
+#relay2_controller.clear_bit(6)  # красный
+#relay2_controller.set_bit(7)  # резерв
 
 data = bus.read_byte(0x38)
-data1 = bus.read_byte(0x39)
+#data1 = bus.read_byte(0x39)
 
-logger.info(str(bin(data) + " " + bin(data1)))
+logger.info(str(bin(data)))
 
 active_cards = []
 
@@ -73,13 +73,13 @@ class ProgramKilled(Exception):
 
 # pin#26 callback (проверка сработки внут защелки (ригеля) на закрытие)
 def f_lock_door_from_inside(self):
-    relay2_controller.set_bit(6)  # зажигаем красный светодиод
+#    relay2_controller.set_bit(6)  # зажигаем красный светодиод
 
 
 def f_before_lock_door_from_inside(self):
-    time.sleep(0.01)
-    if self.state:
-        relay2_controller.clear_bit(6)  # тушим красный светодиод
+#    time.sleep(0.01)
+#    if self.state:
+#        relay2_controller.clear_bit(6)  # тушим красный светодиод
 
 
 # pin#20 callback (проверка сработки "язычка" на открытие с последующим вызовом функции "закрытия замка")
@@ -90,19 +90,19 @@ def f_lock_latch(self):
 
 # pin#16 callback (использование ключа)
 def f_using_key(self):
-    for i in range(5):
-        relay2_controller.set_bit(4)
-        time.sleep(0.3)
-        relay2_controller.clear_bit(4)
-        relay2_controller.set_bit(5)
-        time.sleep(0.3)
-        relay2_controller.clear_bit(5)
-        relay2_controller.set_bit(6)
-        time.sleep(0.3)
-        relay2_controller.clear_bit(6)
-        time.sleep(0.5)
-    if is_door_locked_from_inside():
-        relay2_controller.set_bit(6)
+#    for i in range(5):
+#        relay2_controller.set_bit(4)
+#        time.sleep(0.3)
+#        relay2_controller.clear_bit(4)
+#        relay2_controller.set_bit(5)
+#        time.sleep(0.3)
+#        relay2_controller.clear_bit(5)
+#        relay2_controller.set_bit(6)
+#        time.sleep(0.3)
+#        relay2_controller.clear_bit(6)
+#        time.sleep(0.5)
+#    if is_door_locked_from_inside():
+#        relay2_controller.set_bit(6)
 
 
 # pin#19 callback (сейф)
@@ -162,14 +162,14 @@ def f_window3(self):
 
 # pin#27 callback выключатель основного света
 def f_switch_main(self):
-    global lighting_main
-    if not lighting_main:
-        relay2_controller.clear_bit(0)
-        lighting_main = True
-    else:
-        relay2_controller.set_bit(0)
-        lighting_main = False
-  
+#    global lighting_main
+#    if not lighting_main:
+#        relay2_controller.clear_bit(0)
+#        lighting_main = True
+#    else:
+#        relay2_controller.set_bit(0)
+#        lighting_main = False
+#  
 
 
 # pin#18 callback выключатель бра левый
@@ -266,16 +266,16 @@ def permit_open_door():
     if is_door_locked_from_inside():
         logger.info("The door has been locked by the guest.")
 
-        for i in range(5):
-            relay2_controller.set_bit(4)
-            relay2_controller.clear_bit(6)
-            time.sleep(0.1)
-            relay2_controller.set_bit(6)
-            relay2_controller.clear_bit(4)
-            time.sleep(0.1)
-
-        if not is_door_locked_from_inside():
-            relay2_controller.clear_bit(6)
+#        for i in range(5):
+#            relay2_controller.set_bit(4)
+#            relay2_controller.clear_bit(6)
+#            time.sleep(0.1)
+#            relay2_controller.set_bit(6)
+#            relay2_controller.clear_bit(4)
+#            time.sleep(0.1)
+#
+#        if not is_door_locked_from_inside():
+#            relay2_controller.clear_bit(6)
 
         return
     relay1_controller.clear_bit(0)
@@ -287,10 +287,10 @@ def permit_open_door():
         if door_just_closed:
             return
 
-        relay2_controller.set_bit(4)
-        time.sleep(0.1)
-        relay2_controller.clear_bit(4)
-        time.sleep(0.05)
+#        relay2_controller.set_bit(4)
+#        time.sleep(0.1)
+#        relay2_controller.clear_bit(4)
+#        time.sleep(0.05)
 
     close_door()
 
@@ -413,13 +413,13 @@ if __name__ == "__main__":
 
             else:
                 logger.info("Unknown key!")
-                for i in range(5):
-                    relay2_controller.set_bit(6)
-                    time.sleep(0.1)
-                    relay2_controller.clear_bit(6)
-                    time.sleep(0.05)
-                if is_door_locked_from_inside():
-                    relay2_controller.set_bit(6)
+#                for i in range(5):
+#                    relay2_controller.set_bit(6)
+#                    time.sleep(0.1)
+#                    relay2_controller.clear_bit(6)
+#                    time.sleep(0.05)
+#                if is_door_locked_from_inside():
+#                    relay2_controller.set_bit(6)
         except ProgramKilled:
             logger.info("Program killed: running cleanup code")
             card_task.stop()

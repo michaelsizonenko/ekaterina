@@ -9,8 +9,8 @@
   },
 
   "lock_timeout": 5,
-  "new_key_check_interval": 300,
+  "new_key_check_interval": 60000,
   "rfig_key_table_index": 1,
   "rfid_key_length": 14,
-  "check_pin_timeout": 10
+  "check_pin_timeout": 6000
 }

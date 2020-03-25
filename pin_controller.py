@@ -53,4 +53,4 @@ class PinController:
         self.callback = callback
         if before_callback:
             self.before_callback = before_callback
-        GPIO.add_event_detect(self.pin, react_on, self.gpio_wrapper, bouncetime=50)
+        GPIO.add_event_detect(self.pin, react_on, self.gpio_wrapper, bouncetime=100)
