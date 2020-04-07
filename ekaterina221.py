@@ -18,7 +18,8 @@ from config import system_config, logger
 
 
 door_just_closed = False
-can_open_the_door = True
+domofon = False
+#can_open_the_door = True
 
 db_connection = None
 
@@ -66,7 +67,7 @@ def f_before_lock_door_from_inside(self):
 
 
 
-# pin#20 callback (проверка сработки "язычка" на открытие с последующим вызовом функции "закрытия замка")
+# pin#12 callback (проверка сработки "язычка" на открытие с последующим вызовом функции "закрытия замка")
 def f_lock_latch(self):
     time.sleep(0.5)
     close_door()
@@ -77,16 +78,18 @@ def f_using_key(self):
     pass
 
 
-# pin#19 callback (knopki)
+# pin#25 callback (knopki)
 def f_knopki(self):
-    pass
-#    permit_open_door()
-
+    logger.info("Открытие кнопками замка")
+    #permit_open_door()
+    
 
 # pin#21 callback domofon 1
 def f_domofon(self):
+    global domofon
+    domofon = True
     permit_open_door()
-    pass
+    
 
 # pin#6 callback входная дверь
 def f_door(self):
@@ -111,20 +114,20 @@ def init_room():
         9: None,
         10: None,
         11: None,
-        12: None, 
+        12: PinController(12, f_lock_latch),  # pin12 ("язычка")
         13: None,
         14: None,
         15: None,
         16: PinController(16, f_using_key),  # pin16 (открытие замка механическим ключем)
         17: None,
         18: None,
-        19: PinController(19, f_knopki, up_down=GPIO.PUD_DOWN, react_on=GPIO.RISING),  # pin19 (f_knopki)
-        20: PinController(12, f_lock_latch),  # pin12 ("язычка")
-        21: PinController(21, f_domofon),  # pin21 domofon
+        19: None,
+        20: None,
+        21: PinController(21, f_domofon),  # pin21 domofon /, up_down=GPIO.PUD_DOWN, react_on=GPIO.FALLING /
         22: None,
         23: None,
         24: None,
-        25: None,
+        25: PinController(25, f_knopki, up_down=GPIO.PUD_DOWN, react_on=GPIO.FALLING),  # pin25 (f_knopki)
         26: PinController(26, f_lock_door_from_inside, before_callback=f_before_lock_door_from_inside),  # pin26
         27: None,
     }
@@ -138,16 +141,26 @@ def init_room():
 
 # открытие замка с предварительной проверкой положения pin26(защелка, запрет) и последующим закрытием по таймауту
 def permit_open_door():
-    global door_just_closed, can_open_the_door
+    global door_just_closed, domofon #, can_open_the_door
     if is_door_locked_from_inside():
         logger.info("The door has been locked by the guest.")
-
+        return
+    
+    if not door_just_closed:
+        logger.info("Дверь не закрыта")
         return
     relay1_controller.clear_bit(0)
     time.sleep(0.15)
     relay1_controller.set_bit(0)
-    can_open_the_door = True
-    for i in range(50):
+    door_just_closed = False
+    
+    if not domofon:
+        relay1_controller.clear_bit(2)
+        time.sleep(0.2)
+        relay1_controller.set_bit(2)
+    domofon = False    
+    
+    for i in range(75):
 
         if door_just_closed:
             return
@@ -160,15 +173,16 @@ def permit_open_door():
 
 # закрытие замка, с предварительной проверкой
 def close_door():
-    global door_just_closed, can_open_the_door
-    if not can_open_the_door:
+    global door_just_closed#, can_open_the_door
+    if door_just_closed:
         logger.info("Door is closed. Permission denied!")  # ????
         return
-    relay1_controller.clear_bit(1)
-    time.sleep(0.15)
-    relay1_controller.set_bit(1)
-    can_open_the_door = False
     door_just_closed = True
+    relay1_controller.clear_bit(1)
+    time.sleep(0.2)
+    relay1_controller.set_bit(1)
+#    can_open_the_door = False
+    
     logger.info("Client has been entered!")
 
 def handle_table_row(row_):
@@ -194,7 +208,7 @@ def get_active_cards():
     active_cards = [handle_table_row(row) for row in key_list]
 
 
-def wait_rfid():
+def wait_rfid0():
     rfid_port = serial.Serial('/dev/serial0')
     key_ = rfid_port.read(system_config.rfid_key_length)[1:11]
     logger.info("key catched {key} {datetime}".format(key=key_, datetime=datetime.utcnow()))
@@ -207,7 +221,7 @@ def wait_rfid1():
     logger.info("key catched {key} {datetime}".format(key=key_, datetime=datetime.utcnow()))
     return key_
 
-def wait_rfid0():
+def wait_rfid():
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect(('192.168.9.43', 9761))
     result = sock.recv(1024)
@@ -219,7 +233,7 @@ def wait_rfid0():
  
 def check_pins():
     global room_controller
-    pin_list_for_check = [6, 16, 19, 20, 21, 26]
+    pin_list_for_check = [6, 12, 16, 21, 25, 26]
     for item in pin_list_for_check:
         room_controller[item].check_pin()
     state_message = "Pin state : "
@@ -286,7 +300,7 @@ if __name__ == "__main__":
     while True:
         try:
             logger.info("Waiting for the key")
-            door_just_closed = False
+#            door_just_closed = False
             entered_key = wait_rfid()
             
             if entered_key in active_cards:
