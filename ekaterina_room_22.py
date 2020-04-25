@@ -20,33 +20,25 @@ from config import system_config, logger
 door_just_closed = False
 domofon = False
 
-
 db_connection = None
-
 
 bus = smbus.SMBus(1)
 
-
 # адреса контроллеров
 relay1_controller = RelayController(0x38)
-
 
 # соответствие портов контроллеров
 relay1_controller.set_bit(0)  # открыть замок
 relay1_controller.set_bit(1)  # закрыть замок
 relay1_controller.set_bit(2)  # "дверь открыта"
 
-
-
 data = bus.read_byte(0x38)
-
 
 logger.info(str(bin(data)))
 
 active_cards = []
 
 GPIO.setmode(GPIO.BCM)
-
 
 close_door_from_inside_counter = 1
 open_door_counter = 1
@@ -61,10 +53,8 @@ def f_lock_door_from_inside(self):
     pass
 
 
-
 def f_before_lock_door_from_inside(self):
     pass
-
 
 
 # pin#12 callback (проверка сработки "язычка" на открытие с последующим вызовом функции "закрытия замка")
@@ -83,7 +73,7 @@ def f_using_key(self):
 def f_knopki(self):
     logger.info("Открытие кнопками замка")
     permit_open_door()
-    
+
 
 # pin#21 callback domofon 1
 def f_domofon(self):
@@ -91,7 +81,7 @@ def f_domofon(self):
     domofon = True
     logger.info("Открытие домофоном")
     permit_open_door()
-    
+
 
 # pin#6 callback входная дверь
 def f_door(self):
@@ -101,6 +91,7 @@ def f_door(self):
 def is_door_locked_from_inside():
     time.sleep(0.1)
     return not bool(room_controller[26].state)
+
 
 def init_room():
     logger.info("Init room")
@@ -147,7 +138,7 @@ def permit_open_door():
     if is_door_locked_from_inside():
         logger.info("The door has been locked by the guest.")
         return
-    
+
     if not door_just_closed:
         logger.info("Комманда открытия заблокирована. Замок не закрыт")
         return
@@ -155,12 +146,12 @@ def permit_open_door():
     time.sleep(0.15)
     relay1_controller.set_bit(0)
     door_just_closed = False
-    
+
     if not domofon:
         relay1_controller.clear_bit(2)
         time.sleep(0.2)
         relay1_controller.set_bit(2)
-    domofon = False    
+    domofon = False
     for i in range(500):
         if door_just_closed:
             return
@@ -169,7 +160,6 @@ def permit_open_door():
     logger.info("дверь не открывали, замок будет закрыт по таймауту")
     close_door()
 
-    
 
 # закрытие замка, с предварительной проверкой
 def close_door():
@@ -177,12 +167,13 @@ def close_door():
     if door_just_closed:
         logger.info("Комманда закрытия заблокирована. Замок уже закрыт")
         return
-    
+
     relay1_controller.clear_bit(1)
     time.sleep(0.2)
     relay1_controller.set_bit(1)
     door_just_closed = True
     logger.info("Замок закрыт")
+
 
 def handle_table_row(row_):
     return row_[system_config.rfig_key_table_index].replace(" ", "").encode("UTF-8")
@@ -202,7 +193,7 @@ def get_active_cards():
           "room_number}".format(now=now, room_number=system_config.room_number)
     cursor.execute(sql)
     key_list = cursor.fetchall()
-    print (key_list)
+    print(key_list)
     global active_cards
     active_cards = [handle_table_row(row) for row in key_list]
 
@@ -220,6 +211,7 @@ def wait_rfid1():
     logger.info("key catched {key} {datetime}".format(key=key_, datetime=datetime.utcnow()))
     return key_
 
+
 def wait_rfid():
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect(('192.168.9.43', 9762))
@@ -227,10 +219,11 @@ def wait_rfid():
     key1_ = result.hex()[2:12]
     key2_ = key1_.upper()
     key_ = key2_.encode('utf-8')
-    print (key_)
+    print(key_)
     logger.info("key catched {key} {datetime}".format(key=key_, datetime=datetime.utcnow()))
     return key_
- 
+
+
 def check_pins():
     global room_controller
     pin_list_for_check = [6, 12, 16, 21, 25, 26]
@@ -240,6 +233,7 @@ def check_pins():
     for item in pin_list_for_check:
         state_message += "pin#{pin}:{state}, ".format(pin=room_controller[item].pin, state=room_controller[item].state)
     print(state_message)
+
 
 def signal_handler(signum, frame):
     raise ProgramKilled
@@ -301,14 +295,14 @@ if __name__ == "__main__":
         try:
             logger.info("Waiting for the key")
             entered_key = wait_rfid()
-            
+
             if entered_key in active_cards:
                 logger.info("Correct key! Please enter!")
                 permit_open_door()
 
             else:
                 logger.info("Unknown key!")
-#                
+        #
         except ProgramKilled:
             logger.info("Program killed: running cleanup code")
             card_task.stop()
