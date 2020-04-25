@@ -28,15 +28,18 @@ class PinController:
 
     def check_pin(self):
         self.handler("Check for {pin} pin".format(pin=self.pin))
+        
+    def check_event(self):
+        return (not self.state and self.up_down == GPIO.PUD_UP) or (self.state and self.up_down == GPIO.PUD_DOWN)
 
     def handler(self, message):
-        time.sleep(0.01)
+        time.sleep(0.02)
         self.state = GPIO.input(self.pin)
         self.before_callback(self)
-        if not self.state:
-            time.sleep(0.01)
+        if self.check_event():
+            time.sleep(0.02)
             self.state = GPIO.input(self.pin)
-            if not self.state:
+            if self.check_event():
                 logger.info(message)
                 self.callback(self)
 
@@ -53,4 +56,5 @@ class PinController:
         self.callback = callback
         if before_callback:
             self.before_callback = before_callback
-        GPIO.add_event_detect(self.pin, react_on, self.gpio_wrapper, bouncetime=500)
+        GPIO.add_event_detect(self.pin, react_on, self.gpio_wrapper, bouncetime=200)
+        logger.info(self.__dict__)

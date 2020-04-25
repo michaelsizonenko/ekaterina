@@ -19,7 +19,7 @@ from config import system_config, logger
 
 door_just_closed = False
 domofon = False
-#can_open_the_door = True
+
 
 db_connection = None
 
@@ -69,7 +69,8 @@ def f_before_lock_door_from_inside(self):
 
 # pin#12 callback (проверка сработки "язычка" на открытие с последующим вызовом функции "закрытия замка")
 def f_lock_latch(self):
-    time.sleep(0.5)
+    logger.info("воспользовались ручкой замка, замок будет закрыт")
+    time.sleep(0.3)
     close_door()
 
 
@@ -81,13 +82,14 @@ def f_using_key(self):
 # pin#25 callback (knopki)
 def f_knopki(self):
     logger.info("Открытие кнопками замка")
-    #permit_open_door()
+    permit_open_door()
     
 
 # pin#21 callback domofon 1
 def f_domofon(self):
     global domofon
     domofon = True
+    logger.info("Открытие домофоном")
     permit_open_door()
     
 
@@ -127,7 +129,7 @@ def init_room():
         22: None,
         23: None,
         24: None,
-        25: PinController(25, f_knopki, up_down=GPIO.PUD_DOWN, react_on=GPIO.FALLING),  # pin25 (f_knopki)
+        25: PinController(25, f_knopki),  # pin25 (f_knopki)
         26: PinController(26, f_lock_door_from_inside, before_callback=f_before_lock_door_from_inside),  # pin26
         27: None,
     }
@@ -141,13 +143,13 @@ def init_room():
 
 # открытие замка с предварительной проверкой положения pin26(защелка, запрет) и последующим закрытием по таймауту
 def permit_open_door():
-    global door_just_closed, domofon #, can_open_the_door
+    global door_just_closed, domofon
     if is_door_locked_from_inside():
         logger.info("The door has been locked by the guest.")
         return
     
     if not door_just_closed:
-        logger.info("Дверь не закрыта")
+        logger.info("Комманда открытия заблокирована. Замок не закрыт")
         return
     relay1_controller.clear_bit(0)
     time.sleep(0.15)
@@ -159,31 +161,28 @@ def permit_open_door():
         time.sleep(0.2)
         relay1_controller.set_bit(2)
     domofon = False    
-    
-    for i in range(75):
-
+    for i in range(500):
         if door_just_closed:
             return
+        time.sleep(0.01)
 
-        time.sleep(0.1)
-
+    logger.info("дверь не открывали, замок будет закрыт по таймауту")
     close_door()
 
-    logger.info("Nobody entered")
+    
 
 # закрытие замка, с предварительной проверкой
 def close_door():
-    global door_just_closed#, can_open_the_door
+    global door_just_closed
     if door_just_closed:
-        logger.info("Door is closed. Permission denied!")  # ????
+        logger.info("Комманда закрытия заблокирована. Замок уже закрыт")
         return
-    door_just_closed = True
+    
     relay1_controller.clear_bit(1)
     time.sleep(0.2)
     relay1_controller.set_bit(1)
-#    can_open_the_door = False
-    
-    logger.info("Client has been entered!")
+    door_just_closed = True
+    logger.info("Замок закрыт")
 
 def handle_table_row(row_):
     return row_[system_config.rfig_key_table_index].replace(" ", "").encode("UTF-8")
@@ -223,11 +222,12 @@ def wait_rfid1():
 
 def wait_rfid():
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.connect(('192.168.9.43', 9761))
+    sock.connect(('192.168.9.43', 9762))
     result = sock.recv(1024)
     key1_ = result.hex()[2:12]
     key2_ = key1_.upper()
     key_ = key2_.encode('utf-8')
+    print (key_)
     logger.info("key catched {key} {datetime}".format(key=key_, datetime=datetime.utcnow()))
     return key_
  
@@ -300,7 +300,6 @@ if __name__ == "__main__":
     while True:
         try:
             logger.info("Waiting for the key")
-#            door_just_closed = False
             entered_key = wait_rfid()
             
             if entered_key in active_cards:
