@@ -9,7 +9,7 @@ import RPi.GPIO as GPIO
 import sqlite3
 import asyncio
 import socket
-from threading import Lock
+
 from pin_controller import PinController
 from relaycontroller import RelayController
 from config import system_config, logger
@@ -17,46 +17,7 @@ from config import system_config, logger
 # import pdb; pdb.set_trace()
 
 
-class DoorJustClosedSingleton:
-
-    __lock = Lock()
-    __instance = None
-    __flag = False
-
-    def __init__(self):
-        if DoorJustClosedSingleton.__instance is not None:
-            raise Exception("This class is a singleton!")
-        DoorJustClosedSingleton.__instance = self
-
-    @staticmethod
-    def get_instance():
-        if not DoorJustClosedSingleton.__instance:
-            DoorJustClosedSingleton()
-        return DoorJustClosedSingleton.__instance
-
-    def is_open(self):
-        return not self.__flag
-
-    def is_close(self):
-        return self.__flag
-
-    def close(self):
-        self.__lock.acquire()
-        try:
-            logger.info("The door has been closed!")
-            self.__flag = True
-        finally:
-            self.__lock.release()
-
-    def open(self):
-        self.__lock.acquire()
-        try:
-            logger.info("The door has been opened!")
-            self.__flag = False
-        finally:
-            self.__lock.release()
-
-
+door_just_closed = False
 domofon = False
 
 db_connection = None
@@ -173,18 +134,18 @@ def init_room():
 
 # открытие замка с предварительной проверкой положения pin26(защелка, запрет) и последующим закрытием по таймауту
 def permit_open_door():
-    global domofon
+    global door_just_closed, domofon
     if is_door_locked_from_inside():
         logger.info("The door has been locked by the guest.")
         return
 
-    if DoorJustClosedSingleton.get_instance().is_open():
+    if not door_just_closed:
         logger.info("Комманда открытия заблокирована. Замок не закрыт")
         return
     relay1_controller.clear_bit(0)
     time.sleep(0.15)
     relay1_controller.set_bit(0)
-    DoorJustClosedSingleton.get_instance().close()
+    door_just_closed = False
 
     if not domofon:
         relay1_controller.clear_bit(2)
@@ -192,7 +153,7 @@ def permit_open_door():
         relay1_controller.set_bit(2)
     domofon = False
     for i in range(500):
-        if DoorJustClosedSingleton.get_instance().is_close():
+        if door_just_closed:
             return
         time.sleep(0.01)
 
@@ -202,14 +163,15 @@ def permit_open_door():
 
 # закрытие замка, с предварительной проверкой
 def close_door():
-    if DoorJustClosedSingleton.get_instance().is_close():
+    global door_just_closed
+    if door_just_closed:
         logger.info("Комманда закрытия заблокирована. Замок уже закрыт")
         return
 
     relay1_controller.clear_bit(1)
     time.sleep(0.2)
     relay1_controller.set_bit(1)
-    DoorJustClosedSingleton.get_instance().close()
+    door_just_closed = True
     logger.info("Замок закрыт")
 
 
@@ -234,6 +196,20 @@ def get_active_cards():
     print(key_list)
     global active_cards
     active_cards = [handle_table_row(row) for row in key_list]
+
+
+def wait_rfid0():
+    rfid_port = serial.Serial('/dev/serial0')
+    key_ = rfid_port.read(system_config.rfid_key_length)[1:11]
+    logger.info("key catched {key} {datetime}".format(key=key_, datetime=datetime.utcnow()))
+    return key_
+
+
+def wait_rfid1():
+    rfid_port = serial.Serial('/dev/ttyUSB0')
+    key_ = rfid_port.read(system_config.rfid_key_length)[1:11]
+    logger.info("key catched {key} {datetime}".format(key=key_, datetime=datetime.utcnow()))
+    return key_
 
 
 def wait_rfid():
