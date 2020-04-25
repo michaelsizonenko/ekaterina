@@ -9,7 +9,7 @@ import RPi.GPIO as GPIO
 import sqlite3
 import asyncio
 import socket
-from multithreading import RLock
+from threading import Lock
 from pin_controller import PinController
 from relaycontroller import RelayController
 from config import system_config, logger
@@ -19,7 +19,7 @@ from config import system_config, logger
 
 class DoorJustClosedSingleton:
 
-    __lock = RLock()
+    __lock = Lock()
     __instance = None
     __flag = False
 
