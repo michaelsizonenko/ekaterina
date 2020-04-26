@@ -214,7 +214,7 @@ def wait_rfid1():
 
 def wait_rfid():
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.connect(('192.168.9.43', 9762))
+    sock.connect(('192.168.9.43', 9763))
     result = sock.recv(1024)
     key1_ = result.hex()[2:12]
     key2_ = key1_.upper()
@@ -292,6 +292,8 @@ if __name__ == "__main__":
     check_pin_task.start()
     close_door()
     while True:
+        if f_lock_latch:
+            close_door()
         try:
             logger.info("Waiting for the key")
             entered_key = wait_rfid()

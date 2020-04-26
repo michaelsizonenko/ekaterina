@@ -44,6 +44,7 @@ class PinController:
                 self.callback(self)
 
     def gpio_wrapper(self, pin):
+        print("GPIO wrapper handler {}".format(pin))
         self.handler("Callback handler for pin {pin}".format(pin=pin))
 
     def __init__(self, pin, callback, up_down=GPIO.PUD_UP, react_on=GPIO.BOTH, before_callback=None):
