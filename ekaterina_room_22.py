@@ -292,8 +292,7 @@ if __name__ == "__main__":
     check_pin_task.start()
     close_door()
     while True:
-        if f_lock_latch:
-            close_door()
+       
         try:
             logger.info("Waiting for the key")
             entered_key = wait_rfid()
