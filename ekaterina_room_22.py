@@ -291,7 +291,11 @@ if __name__ == "__main__":
     check_pins()
     check_pin_task = CheckPinTask(interval=timedelta(seconds=system_config.check_pin_timeout), execute=check_pins)
     check_pin_task.start()
-    # close_door()
+
+    relay1_controller.clear_bit(1)
+    time.sleep(0.2)
+    relay1_controller.set_bit(1)
+    door_just_closed = True
 
     loop.run_forever()
     loop.close()
