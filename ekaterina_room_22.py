@@ -296,8 +296,6 @@ if __name__ == "__main__":
     loop.run_forever()
     loop.close()
     # while True:
-    #     if f_lock_latch:
-    #         close_door()
     #     try:
     #         logger.info("Waiting for the key")
     #         entered_key = wait_rfid()
