@@ -49,7 +49,7 @@ class ProgramKilled(Exception):
 
 
 # pin#26 callback (проверка сработки внут защелки (ригеля) на закрытие)
-def f_lock_door_from_inside(self):
+async def f_lock_door_from_inside(self):
     pass
 
 
@@ -58,42 +58,42 @@ def f_before_lock_door_from_inside(self):
 
 
 # pin#12 callback (проверка сработки "язычка" на открытие с последующим вызовом функции "закрытия замка")
-def f_lock_latch(self):
+async def f_lock_latch(self):
     logger.info("воспользовались ручкой замка, замок будет закрыт")
-    time.sleep(0.3)
-    close_door()
+    await asyncio.sleep(0.3)
+    await close_door()
 
 
 # pin#16 callback (использование ключа)
-def f_using_key(self):
+async def f_using_key(self):
     pass
 
 
 # pin#25 callback (knopki)
-def f_knopki(self):
+async def f_knopki(self):
     logger.info("Открытие кнопками замка")
-    permit_open_door()
+    await permit_open_door()
 
 
 # pin#21 callback domofon 1
-def f_domofon(self):
+async def f_domofon(self):
     global domofon
     domofon = True
     logger.info("Открытие домофоном")
-    permit_open_door()
+    await permit_open_door()
 
 
 # pin#6 callback входная дверь
-def f_door(self):
+async def f_door(self):
     pass
 
 
-def is_door_locked_from_inside():
-    time.sleep(0.1)
+async def is_door_locked_from_inside():
+    await asyncio.sleep(0.1)
     return not bool(room_controller[26].state)
 
 
-def init_room():
+def init_room(loop):
     logger.info("Init room")
     pin_structure = {
         1: None,
@@ -101,27 +101,27 @@ def init_room():
         3: None,
         4: None,
         5: None,
-        6: PinController(6, f_door),  # pin6  входная дверь
+        6: PinController(loop, 6, f_door),  # pin6  входная дверь
         7: None,
         8: None,
         9: None,
         10: None,
         11: None,
-        12: PinController(12, f_lock_latch),  # pin12 ("язычка")
+        12: PinController(loop, 12, f_lock_latch),  # pin12 ("язычка")
         13: None,
         14: None,
         15: None,
-        16: PinController(16, f_using_key),  # pin16 (открытие замка механическим ключем)
+        16: PinController(loop, 16, f_using_key),  # pin16 (открытие замка механическим ключем)
         17: None,
         18: None,
         19: None,
         20: None,
-        21: PinController(21, f_domofon),  # pin21 domofon /, up_down=GPIO.PUD_DOWN, react_on=GPIO.FALLING /
+        21: PinController(loop, 21, f_domofon),  # pin21 domofon /, up_down=GPIO.PUD_DOWN, react_on=GPIO.FALLING /
         22: None,
         23: None,
         24: None,
-        25: PinController(25, f_knopki),  # pin25 (f_knopki)
-        26: PinController(26, f_lock_door_from_inside, before_callback=f_before_lock_door_from_inside),  # pin26
+        25: PinController(loop, 25, f_knopki),  # pin25 (f_knopki)
+        26: PinController(loop, 26, f_lock_door_from_inside, before_callback=f_before_lock_door_from_inside),  # pin26
         27: None,
     }
 
@@ -133,9 +133,9 @@ def init_room():
 
 
 # открытие замка с предварительной проверкой положения pin26(защелка, запрет) и последующим закрытием по таймауту
-def permit_open_door():
+async def permit_open_door():
     global door_just_closed, domofon
-    if is_door_locked_from_inside():
+    if await is_door_locked_from_inside():
         logger.info("The door has been locked by the guest.")
         return
 
@@ -143,33 +143,33 @@ def permit_open_door():
         logger.info("Комманда открытия заблокирована. Замок не закрыт")
         return
     relay1_controller.clear_bit(0)
-    time.sleep(0.15)
+    await asyncio.sleep(0.15)
     relay1_controller.set_bit(0)
     door_just_closed = False
 
     if not domofon:
         relay1_controller.clear_bit(2)
-        time.sleep(0.2)
+        await asyncio.sleep(0.2)
         relay1_controller.set_bit(2)
     domofon = False
     for i in range(500):
         if door_just_closed:
             return
-        time.sleep(0.01)
+        await asyncio.sleep(0.01)
 
     logger.info("дверь не открывали, замок будет закрыт по таймауту")
-    close_door()
+    await close_door()
 
 
 # закрытие замка, с предварительной проверкой
-def close_door():
+async def close_door():
     global door_just_closed
     if door_just_closed:
         logger.info("Комманда закрытия заблокирована. Замок уже закрыт")
         return
 
     relay1_controller.clear_bit(1)
-    time.sleep(0.2)
+    await asyncio.sleep(0.2)
     relay1_controller.set_bit(1)
     door_just_closed = True
     logger.info("Замок закрыт")
@@ -285,28 +285,32 @@ if __name__ == "__main__":
                                      execute=get_active_cards)
     card_task.start()
 
-    room_controller = init_room()
+    loop = asyncio.get_event_loop()
+    room_controller = init_room(loop)
 
     check_pins()
     check_pin_task = CheckPinTask(interval=timedelta(seconds=system_config.check_pin_timeout), execute=check_pins)
     check_pin_task.start()
     close_door()
-    while True:
-        if f_lock_latch:
-            close_door()
-        try:
-            logger.info("Waiting for the key")
-            entered_key = wait_rfid()
 
-            if entered_key in active_cards:
-                logger.info("Correct key! Please enter!")
-                permit_open_door()
-
-            else:
-                logger.info("Unknown key!")
-        #
-        except ProgramKilled:
-            logger.info("Program killed: running cleanup code")
-            card_task.stop()
-            check_pin_task.stop()
-            break
+    loop.run_forever()
+    loop.close()
+    # while True:
+    #     if f_lock_latch:
+    #         close_door()
+    #     try:
+    #         logger.info("Waiting for the key")
+    #         entered_key = wait_rfid()
+    #
+    #         if entered_key in active_cards:
+    #             logger.info("Correct key! Please enter!")
+    #             permit_open_door()
+    #
+    #         else:
+    #             logger.info("Unknown key!")
+    #     #
+    #     except ProgramKilled:
+    #         logger.info("Program killed: running cleanup code")
+    #         card_task.stop()
+    #         check_pin_task.stop()
+    #         break

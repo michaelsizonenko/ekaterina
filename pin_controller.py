@@ -1,5 +1,6 @@
 import RPi.GPIO as GPIO
 import time
+import asyncio
 from config import logger
 
 
@@ -7,6 +8,7 @@ class PinController:
 
     pin = None
     state = 0
+    loop = None
 
     def validate_pin(self, pin):
         if not pin:
@@ -41,14 +43,18 @@ class PinController:
             self.state = GPIO.input(self.pin)
             if self.check_event():
                 logger.info(message)
-                self.callback(self)
+                asyncio.run_coroutine_threadsafe(self.callback(), self.loop)
+                # self.callback(self)
 
     def gpio_wrapper(self, pin):
         print("GPIO wrapper handler {}".format(pin))
         self.handler("Callback handler for pin {pin}".format(pin=pin))
 
-    def __init__(self, pin, callback, up_down=GPIO.PUD_UP, react_on=GPIO.BOTH, before_callback=None):
+    def __init__(self, loop, pin, callback, up_down=GPIO.PUD_UP, react_on=GPIO.BOTH, before_callback=None):
         logger.info("Pin controller for {} pin has been initiated".format(pin))
+        if loop is None:
+            raise Exception("Unexpected value for loop")
+        self.loop = loop
         self.pin = self.validate_pin(pin)
         assert (up_down in (GPIO.PUD_UP, GPIO.PUD_DOWN)), \
             "This is weird! Pull-up-down parameter can be either UP or DOWN. {} given".format(up_down)
