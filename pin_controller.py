@@ -43,7 +43,7 @@ class PinController:
             self.state = GPIO.input(self.pin)
             if self.check_event():
                 logger.info(message)
-                asyncio.run_coroutine_threadsafe(self.callback(), self.loop)
+                asyncio.run_coroutine_threadsafe(self.callback(self), self.loop)
                 # self.callback(self)
 
     def gpio_wrapper(self, pin):
