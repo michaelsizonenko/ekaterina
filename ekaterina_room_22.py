@@ -291,7 +291,7 @@ if __name__ == "__main__":
     check_pins()
     check_pin_task = CheckPinTask(interval=timedelta(seconds=system_config.check_pin_timeout), execute=check_pins)
     check_pin_task.start()
-    close_door()
+    # close_door()
 
     loop.run_forever()
     loop.close()
